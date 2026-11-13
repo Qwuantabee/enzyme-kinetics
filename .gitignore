@@ -1,3 +1,9 @@
+# Data files are large and must never be committed.
+# The 11-13 push was rejected because data/raw/frere2023.zip (130 MB) exceeded
+# GitHub's 100 MB limit; all raw data stays local.
+data/
+
+# Python
 .venv/
 __pycache__/
 *.pyc
@@ -5,6 +11,6 @@ __pycache__/
 build/
 dist/
 .pytest_cache/
-data/*.csv
-data/*.gz
+
+# Generated outputs are committed deliberately, not by accident.
 results.txt
