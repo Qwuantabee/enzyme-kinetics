@@ -1,0 +1,43 @@
+==========================================================================
+Published dataset: P99 beta-lactamase + nitrocefin (Frere et al. 2023)
+==========================================================================
+enzyme        0.60 nM (final, cuvette)
+delta eps     15000 M^-1 cm^-1 at 462 nm
+conditions    10 mM HEPES pH 8.2, 0.2 M NaCl, 50 ug/mL BSA, 30 C
+traces        18 (5 substrate concentrations)
+published     kcat = 780 s^-1, Km = 25 uM
+
+--- initial rates (15% window), pooled by [S] ---
+  [S] uM   v uM/min     SEM  n                 range
+    11.1      8.278   0.270  5  [7.36, 8.84]
+    22.1     13.932   0.157  4  [13.59, 14.22]
+    35.0     17.591   0.089  4  [17.33, 17.72]
+    52.2     20.021   0.029  2  [19.99, 20.05]
+    64.0     23.058   0.230  3  [22.60, 23.29]
+
+model: michaelis_menten   n=5   s=0.6338   R2=0.9908   AICc=2.88
+    vmax = 34.45 +/- 2.32  (6.7%)
+      km = 33.98 +/- 5.03  (14.8%)
+  kcat = 957 s^-1   (1.23 x published)
+
+--- progress curves (integrated rate equation, all points) ---
+conversion reached: 36% to 65% of [S]0
+progress-curve fit: 18 trace(s), 2376 points, s=0.1413
+  vmax = 32.706 +/- 0.098
+   km  = 29.572 +/- 0.185
+  kcat = 909 s^-1   (1.16 x published)
+
+--- comparison ---
+                    Vmax     Km uM     kcat    kcat/Km
+initial rates      34.45     33.98      957      28.16e6
+progress           32.71     29.57      909      30.72e6
+Km relative SE: initial rates 14.8%, progress 0.6%
+
+--- the paper's premise, measured on our fits ---
+lowest [S]0 = 11.1 uM = 0.33 x fitted Km
+At that concentration the reaction is far from saturated, so the
+initial-rate window covers a large fraction of S0 and depletes it.
+That is exactly the regime where the paper argues progress curves
+are better, and the Km standard errors above are the test of it.
+
+figure -> /mnt/c/Users/markt/Documents/biotech-portfolio/enzyme-kinetics/figures/published_p99.png
