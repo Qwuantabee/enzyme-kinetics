@@ -11,6 +11,9 @@ data/*
 !data/frere2023_nitrocefin/*.csv
 !data/chembl_dhfr/
 !data/chembl_dhfr/*.csv
+# The four PDB coordinate files used by enzkin.structure tests (~1 MB total).
+!data/pdb/
+!data/pdb/*.pdb
 
 # Python
 .venv/

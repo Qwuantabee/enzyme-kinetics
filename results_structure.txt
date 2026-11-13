@@ -1,0 +1,109 @@
+============================================================================
+Ki -> binding site, E. coli dihydrofolate reductase
+============================================================================
+ChEMBL Ki records      266 total, 257 wild-type (9 mutant records excluded)
+
+--- the mutant problem, on the record ---
+methotrexate Ki, all records : [0.001, 0.021, 330.0, 2400.0, 170000.0] nM
+methotrexate Ki, wild type   : [0.001, 0.021] nM
+Pooling these would claim a 5-order-of-magnitude uncertainty on one
+compound. The spread is not noise: three records are point mutants at
+residue 31 (Phe/Tyr/Val), which the loader filters on the assay
+description.
+
+--- structures analysed ---
+1DDR: MOLECULE: DIHYDROFOLATE REDUCTASE (E.C.1.5.1.3) COMPLEXED WITH
+    MTX [A,B]: 18 site residues, burial 91% (30/33 atoms)
+3DAU: CRYSTAL STRUCTURE OF THE TERNARY MTX NADPH COMPLEX OF ESCHERIC
+    MTX [A]: 21 site residues, burial 100% (33/33 atoms)
+    NDP [A]: 30 site residues, burial 98% (47/48 atoms)
+4DFR: CRYSTAL STRUCTURES OF ESCHERICHIA COLI AND LACTOBACILLUS CASEI
+    MTX [A,B]: 18 site residues, burial 97% (32/33 atoms)
+
+--- Ki joined to site ---
+Compound identity comes from the PDB chemical-component ChEMBL
+cross-reference, not from SMILES matching. That matters: the link is
+the crystallographers' assertion about what the ligand is.
+  3DAU/NDP (CHEMBL1235856): no measured Ki, skipped
+
+CHEMBL34259 (MTX) in 1DDR
+  Ki = 0.001 nM  [assay CHEMBL3829125]
+  site: 18 residues, burial 91%
+  seq: IAADLWFKTTSIRLRIYT
+  contacts: {'hbond': 14, 'hydrophobic': 25, 'salt_bridge': 9, 'aromatic': 65}
+  note: compound identity linked via the PDB chemical-component ChEMBL cross-reference, not by SMILES matching
+  note: the Ki and the crystal structure may have been measured under different conditions (pH, temperature, buffer, construct)
+
+CHEMBL34259 (MTX) in 1DDR
+  Ki = 0.021 nM  [assay CHEMBL664859]
+  site: 18 residues, burial 91%
+  seq: IAADLWFKTTSIRLRIYT
+  contacts: {'hbond': 14, 'hydrophobic': 25, 'salt_bridge': 9, 'aromatic': 65}
+  note: compound identity linked via the PDB chemical-component ChEMBL cross-reference, not by SMILES matching
+  note: the Ki and the crystal structure may have been measured under different conditions (pH, temperature, buffer, construct)
+
+CHEMBL34259 (MTX) in 3DAU
+  Ki = 0.001 nM  [assay CHEMBL3829125]
+  site: 21 residues, burial 100%
+  seq: IAAMPDLAWFKTSIRLPRIYT
+  contacts: {'hbond': 12, 'hydrophobic': 26, 'salt_bridge': 11, 'aromatic': 73}
+  note: compound identity linked via the PDB chemical-component ChEMBL cross-reference, not by SMILES matching
+  note: the Ki and the crystal structure may have been measured under different conditions (pH, temperature, buffer, construct)
+
+CHEMBL34259 (MTX) in 3DAU
+  Ki = 0.021 nM  [assay CHEMBL664859]
+  site: 21 residues, burial 100%
+  seq: IAAMPDLAWFKTSIRLPRIYT
+  contacts: {'hbond': 12, 'hydrophobic': 26, 'salt_bridge': 11, 'aromatic': 73}
+  note: compound identity linked via the PDB chemical-component ChEMBL cross-reference, not by SMILES matching
+  note: the Ki and the crystal structure may have been measured under different conditions (pH, temperature, buffer, construct)
+
+CHEMBL34259 (MTX) in 4DFR
+  Ki = 0.001 nM  [assay CHEMBL3829125]
+  site: 18 residues, burial 97%
+  seq: IAADLWFKTSIRLPRIYT
+  contacts: {'hbond': 13, 'hydrophobic': 21, 'salt_bridge': 11, 'aromatic': 55}
+  note: compound identity linked via the PDB chemical-component ChEMBL cross-reference, not by SMILES matching
+  note: the Ki and the crystal structure may have been measured under different conditions (pH, temperature, buffer, construct)
+
+CHEMBL34259 (MTX) in 4DFR
+  Ki = 0.021 nM  [assay CHEMBL664859]
+  site: 18 residues, burial 97%
+  seq: IAADLWFKTSIRLPRIYT
+  contacts: {'hbond': 13, 'hydrophobic': 21, 'salt_bridge': 11, 'aromatic': 55}
+  note: compound identity linked via the PDB chemical-component ChEMBL cross-reference, not by SMILES matching
+  note: the Ki and the crystal structure may have been measured under different conditions (pH, temperature, buffer, construct)
+
+--- what this establishes ---
+Each row above is a real measured affinity next to real coordinates:
+the number of residues lining the pocket, which residues they are,
+how enclosed the ligand is, and how many contacts of each type.
+Those are computed from the deposited coordinates and can be checked
+against the structure by hand.
+
+--- what it does not establish ---
+Not a structure-affinity relationship. With one protein and at most a
+few ligands that have both a measured Ki and a crystal structure,
+any correlation between burial and potency would be anecdotal, and a
+p-value on n=3 would be a decoration. Establishing that a contact
+contributes to binding needs mutagenesis or a congeneric series, not
+a comparison of two ligands.
+
+The geometric descriptors are also proxies, not physics:
+  - burial is a contact-count fraction, not a Shrake-Rupley SASA
+  - 'hydrophobic contacts' count carbon-carbon distances, which
+    correlates with burial but is not an energy
+  - the Ki and the structure may come from different conditions
+    (pH, temperature, buffer, construct, and sometimes species)
+
+The last is the one that bites in practice. 4DFR contains both an
+E. coli and a Lactobacillus casei copy; analysing the wrong chain
+would compare an E. coli Ki to a L. casei pocket and look fine.
+
+6 Ki/structure pairs joined.
+
+--- within-compound spread of the measured Ki ---
+CHEMBL34259: [0.001, 0.021] nM  (21x spread across wild-type assays)
+The structure is one thing; the affinity is a distribution. Any
+statement of the form 'the Ki for this scaffold is X' needs to say
+which assay it came from.

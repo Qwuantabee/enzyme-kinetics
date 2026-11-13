@@ -297,3 +297,69 @@ def load_chembl_dhfr_ic50(data_dir=None):
             "pchembl": r.get("pchembl") or None,
         })
     return out
+
+
+#: Assay descriptions that indicate a mutant enzyme rather than wild type.
+#: This is a text filter and it is a blunt instrument, but the alternative --
+#: trusting that every ChEMBL record for "E. coli DHFR" refers to the same
+#: protein -- is worse. It was caught the hard way: five methotrexate Ki
+#: records spanned 0.001 to 170000 nM, and reading the assay descriptions
+#: showed three of them were Phe31/Tyr31/Val31 point mutants.
+MUTANT_MARKERS = ("mutant", "Phe -31", "Tyr -31", "Val -31", "Phe31",
+                  "Tyr31", "Val31", "variant", "Cys -")
+
+
+def _looks_mutant(description):
+    d = (description or "").lower()
+    return any(m.lower() in d for m in MUTANT_MARKERS)
+
+
+def load_chembl_dhfr_ki(data_dir=None, wild_type_only=True):
+    """Measured Ki values for E. coli DHFR, as a list of dicts.
+
+    Source: ChEMBL target CHEMBL1809, standard_type=Ki, 266 records over 219
+    compounds, vendored to data/chembl_dhfr/ecoli_dhfr_ki.csv.
+
+    `wild_type_only` (default) drops records whose assay description names a
+    point mutant. This is not cosmetic. Methotrexate appears five times in
+    this dataset with Ki values of 0.001, 0.021, 330, 2400 and 170000 nM; the
+    three middle-high ones are Phe31, Tyr31 and Val31 mutants of the same
+    residue, and only two are wild-type. Pooling them would make "the Ki of
+    methotrexate for E. coli DHFR" meaningless, and any structure comparison
+    built on it would be comparing a mutant's affinity to a wild-type crystal.
+
+    The filter is a keyword match on the assay description, which is a blunt
+    instrument and will not be perfect. Records whose description is missing
+    or generic are kept, because dropping unknowns would hide the problem
+    rather than expose it. `wild_type_only=False` returns everything.
+
+    Each record must also carry `assay_description` and `assay_organism` so a
+    caller can apply a stricter filter of its own.
+    """
+    import csv
+
+    d = Path(data_dir) if data_dir is not None else CHEMBL_DHFR_DIR
+    path = d / "ecoli_dhfr_ki.csv"
+    with path.open(newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    out = []
+    for r in rows:
+        try:
+            value = float(r["ki_nM"])
+        except (TypeError, ValueError):
+            continue
+        if value <= 0:
+            continue
+        desc = r.get("assay_description") or ""
+        if wild_type_only and _looks_mutant(desc):
+            continue
+        out.append({
+            "molecule_chembl_id": r["molecule_chembl_id"],
+            "assay_chembl_id": r["assay_chembl_id"],
+            "document_chembl_id": r["document_chembl_id"],
+            "ki_nM": value,
+            "relation": r.get("relation", "="),
+            "assay_description": desc,
+            "assay_organism": r.get("assay_organism") or "",
+        })
+    return out
