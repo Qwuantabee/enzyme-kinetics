@@ -1,7 +1,14 @@
-# Data files are large and must never be committed.
-# The 11-13 push was rejected because data/raw/frere2023.zip (130 MB) exceeded
-# GitHub's 100 MB limit; all raw data stays local.
-data/
+# Data files are large and must never be committed. The 11-13 push was
+# rejected because data/raw/frere2023.zip (136 MB) exceeded GitHub's 100 MB
+# limit, so the raw archive stays local and is fetched by
+# scripts/prepare_frere2023.py. Note the pattern must be `data/*`, not
+# `data/`: git cannot re-include a path inside an ignored directory.
+data/*
+# ...except the 84 KB of extracted experimental traces, which the test suite
+# reads. Without these the published-dataset tests cannot run on a fresh
+# clone, and a test that only passes on one machine is not a test.
+!data/frere2023_nitrocefin/
+!data/frere2023_nitrocefin/*.csv
 
 # Python
 .venv/
