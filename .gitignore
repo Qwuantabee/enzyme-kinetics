@@ -9,6 +9,8 @@ data/*
 # clone, and a test that only passes on one machine is not a test.
 !data/frere2023_nitrocefin/
 !data/frere2023_nitrocefin/*.csv
+!data/chembl_dhfr/
+!data/chembl_dhfr/*.csv
 
 # Python
 .venv/

@@ -239,3 +239,61 @@ def kcat_from_vmax(vmax_um_per_min, enzyme_conc_m=None):
     if e <= 0:
         raise ValueError("enzyme concentration must be positive")
     return (vmax_um_per_min * 1e-6 / 60.0) / e
+
+
+# ---------------------------------------------------------------------------
+# ChEMBL: E. coli dihydrofolate reductase inhibition data
+# ---------------------------------------------------------------------------
+#: Target used for the IC50 dataset. E. coli DHFR, single-protein format.
+CHEMBL_DHFR_TARGET = "CHEMBL1809"
+CHEMBL_DHFR_DIR = (Path(__file__).resolve().parents[2]
+                   / "data" / "chembl_dhfr")
+
+
+def load_chembl_dhfr_ic50(data_dir=None):
+    """Measured IC50 values for E. coli DHFR, as a list of dicts.
+
+    Fetched from ChEMBL (target CHEMBL1809, standard_type=IC50,
+    standard_relation='=') and vendored to
+    data/chembl_dhfr/ecoli_dhfr_ic50.csv. 483 records over 354 compounds and
+    42 publications -- a real inhibitor series, not a simulation.
+
+    Why this dataset: it is what an IC50-to-Ki conversion actually operates
+    on. The values span sub-nanomolar to millimolar, which is the range in
+    which the arithmetic has to stay sane, and the records carry the molecule
+    and document identifiers so any individual value can be traced back.
+
+    What it lacks, and this matters: ChEMBL's activity records here do not
+    carry the assay's substrate concentration or the enzyme concentration.
+    Those are exactly the numbers Cheng-Prusoff needs inputs for. So this
+    dataset can validate the arithmetic across a realistic range and cannot
+    validate the conversion against measured Ki values. That limitation is
+    recorded in README.md rather than papered over -- see
+    tests/test_cheng_prusoff.py, which checks what is checkable.
+
+    Returns dicts with keys: molecule_chembl_id, assay_chembl_id,
+    document_chembl_id, ic50_nM, relation, pchembl.
+    """
+    import csv
+
+    d = Path(data_dir) if data_dir is not None else CHEMBL_DHFR_DIR
+    path = d / "ecoli_dhfr_ic50.csv"
+    with path.open(newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    out = []
+    for r in rows:
+        try:
+            value = float(r["ic50_nM"])
+        except (TypeError, ValueError):
+            continue
+        if value <= 0:
+            continue
+        out.append({
+            "molecule_chembl_id": r["molecule_chembl_id"],
+            "assay_chembl_id": r["assay_chembl_id"],
+            "document_chembl_id": r["document_chembl_id"],
+            "ic50_nM": value,
+            "relation": r.get("relation", "="),
+            "pchembl": r.get("pchembl") or None,
+        })
+    return out

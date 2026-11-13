@@ -1,0 +1,53 @@
+==========================================================================
+Cheng-Prusoff conversion, real E. coli DHFR IC50 data
+==========================================================================
+source     ChEMBL target CHEMBL1809, standard_type=IC50, relation '='
+records    482 values, 353 compounds, 42 publications
+range      0.85 to 1e+09 nM
+median     306 nM
+
+--- correction factor vs [S]/Km (competitive) ---
+ [S]/Km   factor    Ki from median IC50
+    0.1     1.10                  278.2 nM
+    0.5     1.50                  204.0 nM
+    1.0     2.00                  153.0 nM
+    2.0     3.00                  102.0 nM
+    5.0     6.00                   51.0 nM
+   10.0    11.00                   27.8 nM
+   50.0    51.00                    6.0 nM
+
+--- the same IC50 under three mechanisms ([S] = 2 Km) ---
+competitive      Ki =      102.0 nM
+uncompetitive    Ki =      204.0 nM
+noncompetitive   Ki =      306.0 nM
+
+--- converted dataset (competitive, assuming [S] = 2 Km) ---
+Ki range   0.283 to 3.33e+08 nM
+Ki median  102 nM
+The conversion divides every value by the same factor, so it shifts
+the distribution without changing its shape or the rank order. That
+is the honest summary: Cheng-Prusoff rescales a series, it does not
+reorganise it.
+
+--- tight-binding risk across the series ---
+For each assumed enzyme concentration, how many of these compounds
+fall below the 10x threshold where Cheng-Prusoff stops being valid?
+   [E] nM  IC50 < 10[E]  % of series
+      0.1             1         0.2%
+      1.0            69        14.3%
+     10.0           187        38.8%
+    100.0           296        61.4%
+
+--- assumption check on the median compound ---
+model=competitive  [S]/Km=2.00  correction=3.00x
+  IC50/[E] = 306.0
+  no assumption violations detected
+
+--- what this does NOT establish ---
+ChEMBL's activity records for this target carry no [S] and no [E].
+Every Ki above is therefore illustrative of the arithmetic, not a
+measurement. To validate the conversion against measured Ki you need
+a paper reporting both for the same compound under stated conditions.
+That is the open item in README.md.
+
+figure -> /mnt/c/Users/markt/Documents/biotech-portfolio/enzyme-kinetics/figures/ic50_conversion.png
