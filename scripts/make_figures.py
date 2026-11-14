@@ -801,7 +801,9 @@ def fig_ic50_conversion():
     ax.set_yscale("log")
     ax.set_xlabel("[S] / Km (dimensionless)")
     ax.set_ylabel("IC50 / Ki (dimensionless)")
-    ax.set_title("The IC50\u2192Ki correction runs from 1\u00d7 to 100\u00d7\n"
+    lo_f = cp.correction_factor(0.1, 1.0, "competitive")
+    hi_f = cp.correction_factor(100.0, 1.0, "competitive")
+    ax.set_title(f"The IC50\u2192Ki correction runs from {lo_f:.1f}\u00d7 to {hi_f:.0f}\u00d7\n"
                  "as [S]/Km rises from 0.1 to 100")
     ax.legend(loc="upper left", fontsize=FS_NOTE, frameon=False)
 
