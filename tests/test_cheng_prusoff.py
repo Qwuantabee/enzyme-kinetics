@@ -268,7 +268,7 @@ def test_chembl_conversion_round_trips_over_the_real_range():
     """Every measured IC50 in the dataset must survive conversion and back."""
     table = datasets.load_chembl_dhfr_ic50()
     km_nM, s_nM = 25e3, 60e3   # DHFR assays run near [S] ~ 2-3 Km, in nM
-    for row in table[:200]:
+    for row in table:
         ic = row["ic50_nM"]
         ki = cp.ki_from_ic50(ic, s_nM, km_nM, model="competitive")
         back = cp.ic50_from_ki(ki, s_nM, km_nM, model="competitive")
