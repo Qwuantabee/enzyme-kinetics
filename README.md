@@ -271,7 +271,10 @@ what is left in those is written down rather than quietly dropped.
   number averages assay conditions whose own medians are 3.0, 4.2, 4.6, 9.7
   and 20.9, so it is a summary and not a conversion factor. What the data can
   support is the *structure*: inside each assay condition the ratio is
-  reproducible to a pooled within-group log10 SD of 0.288 (1.9-fold), and the
+  reproducible to a pooled within-group log10 SD of 0.288 (1.9-fold; the
+  pooled figure hides the per-group max/min spreads of 2.0× for CHEMBL3632554,
+  11.5× and 11.1× for the two [S] groups of CHEMBL1136127, 6.3× for
+  CHEMBL1124568 and 26.9× for the 3-pair CHEMBL5233242), and the
   groups differ from each other (one-way ANOVA, F(4,41) = 12.86,
   p = 7.2×10⁻⁷; 51% of the log-ratio variance is between groups). That is the
   pattern a per-assay substrate factor predicts, and any per-assay systematic
