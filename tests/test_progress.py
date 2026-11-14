@@ -167,8 +167,13 @@ def test_progress_fit_on_published_traces_agrees_with_published_values():
 
 def test_progress_fit_km_is_tighter_than_the_initial_rate_fit():
     """The practical argument for fitting the whole curve: on published data
-    at 40-65% conversion, Km from 18 traces should be better determined than
-    Km from 5 averaged initial rates."""
+    at 36-65% conversion, Km from 18 traces should be better determined than
+    Km from 5 averaged initial rates -- but only once the within-trace
+    autocorrelation is accounted for by a trace-level bootstrap.
+
+    The comparison must use the cluster SE. The i.i.d. SE makes this look 25x
+    better, which it is not.
+    """
     table = datasets.initial_rate_table(0.15)
     S = np.array([r["s0_um"] for r in table])
     v = np.array([r["v_um_per_min"] for r in table])
@@ -176,12 +181,71 @@ def test_progress_fit_km_is_tighter_than_the_initial_rate_fit():
     rel_rate = rate_fit.stderr["km"] / rate_fit.params["km"]
 
     traces = [datasets.progress_curve(stem) for stem in datasets.SUBSTRATE_UM]
-    prog = progress.fit_progress_global(traces)
-    rel_prog = prog.km_stderr / prog.km
+    boot = _published_bootstrap()
+    rel_prog = boot.km_stderr_cluster / boot.km
 
     assert rel_prog < rel_rate, (
         f"progress-curve Km RSE {rel_prog:.3f} not better than "
         f"initial-rate {rel_rate:.3f}")
+    # It is better, but not by an order of magnitude. Guard the direction of
+    # the correction as well as the outcome.
+    assert boot.km_stderr_cluster > boot.km_stderr_iid
+
+
+def test_the_iid_se_understates_the_km_uncertainty_on_real_traces():
+    """The i.i.d. SE is not a conservative approximation on these traces; it
+    is wrong by more than an order of magnitude, because the residuals inside
+    a trace are almost perfectly correlated from point to point.
+    """
+    traces = [datasets.progress_curve(stem) for stem in datasets.SUBSTRATE_UM]
+    fit = progress.fit_progress_global(traces)
+    assert fit.n_boot == 0
+    assert fit.km_stderr == pytest.approx(fit.km_stderr_iid)
+
+    # diagnostics: every trace is strongly autocorrelated, median above 0.9
+    assert len(fit.lag1) == 18
+    assert all(np.isfinite(fit.lag1))
+    assert min(fit.lag1) > 0.5
+    assert fit.lag1_median > 0.9
+
+    boot = _published_bootstrap()
+    assert boot.km_stderr_cluster > 5 * boot.km_stderr_iid, (
+        f"cluster SE {boot.km_stderr_cluster:.3f} barely exceeds "
+        f"i.i.d. {boot.km_stderr_iid:.3f}; if this ever fails, check the "
+        f"residual autocorrelation before believing the small SE")
+    lo, hi = boot.km_ci_cluster
+    assert lo < boot.km < hi
+
+
+def _published_bootstrap():
+    """One cached bootstrap of the published traces -- it costs ~15 s."""
+    global _BOOT
+    try:
+        return _BOOT
+    except NameError:
+        traces = [datasets.progress_curve(stem) for stem in datasets.SUBSTRATE_UM]
+        _BOOT = progress.cluster_se(traces, n_boot=150, seed=0)
+        return _BOOT
+
+
+def test_cluster_se_needs_enough_resamples():
+    traces = [datasets.progress_curve(stem) for stem in datasets.SUBSTRATE_UM]
+    with pytest.raises(ValueError, match="n_boot"):
+        progress.cluster_se(traces, n_boot=5)
+
+
+def test_cluster_se_widens_not_narrows_when_residuals_are_smooth():
+    """Synthetic control: a deterministic smooth per-trace offset must give a
+    cluster SE at least as wide as the i.i.d. one, since the points inside a
+    trace are not independent evidence about the shared parameters."""
+    s0s = [10.0, 10.0, 25.0, 25.0, 50.0, 50.0]
+    traces = []
+    for i, s0 in enumerate(s0s):
+        t = np.linspace(0.0, 3.0, 60)
+        p = progress.product_from_time(t, 100.0, 25.0, s0)
+        traces.append((t, p * (1.0 + 0.01 * (i - 2.5) / 2.5), s0))
+    boot = progress.cluster_se(traces, n_boot=60, seed=1)
+    assert boot.km_stderr_cluster >= boot.km_stderr_iid
 
 
 def test_progress_fit_on_published_data_has_small_residuals():

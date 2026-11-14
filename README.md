@@ -222,7 +222,8 @@ what is left in those is written down rather than quietly dropped.
 - ~~Progress-curve fitting, to use the whole time course instead of initial
   rates~~ — **done.** The integrated rate equation is fitted to all 2376
   points. On these traces it puts Km within 18% of the published value with a
-  standard error 25× smaller than the initial-rate fit. See below.
+  Km standard error about 2× smaller than the initial-rate fit (5.03 → 2.21 µM,
+  trace-level cluster bootstrap). See below.
 
 - ~~IC50 to Ki conversion via Cheng-Prusoff, with the assumptions made
   explicit~~ — **done**, and the caveat that stood here is now measured
@@ -333,20 +334,36 @@ Two analyses of the same 18 traces:
 | method | Vmax (µM/min) | Km (µM) | kcat (s⁻¹) | Km rel. SE |
 |---|---|---|---|---|
 | initial rates, 15% window | 34.45 ± 2.32 | 33.98 ± 5.03 | 957 | 14.8% |
-| progress curves, all points | 32.71 ± 0.10 | 29.57 ± 0.19 | 909 | **0.6%** |
+| progress curves, all points | 32.71 ± 0.10 | 29.57 ± 2.21 | 909 | **7.5%** |
 | published literature | — | 25 | 780 | — |
 
-Km lands within 18% of the published 25 µM and kcat within 17% of 780 s⁻¹.
-Residual σ is 0.14 µM against a quantisation floor of 0.007 µM, so the
-single-substrate model with no product inhibition genuinely describes these
-traces over 36–65% conversion rather than being forced onto them.
+The progress-curve SE is a **trace-level cluster bootstrap** (400 resamples,
+stratified by [S]₀), not the i.i.d. value the fit returns: 95% CI for Km is
+[25.74, 33.44] µM. The i.i.d. number, 0.19 µM, is not an uncertainty at all.
+It treats 2376 points from 18 traces as 2376 independent observations, and
+the residuals are strongly autocorrelated within a trace — lag-1 r runs 0.94
+to 1.00 across all 18, median 1.00. Resampling whole traces is the level at
+which the data actually replicate, and it gives a Km SD about **12× larger**
+than the i.i.d. figure. `progress.py` now reports both, prints the lag-1
+diagnostics per trace, and `cluster_se()` is in `scripts/fit_published.py`.
 
-The Km standard error improving 25× is the real result. It is not extra
-precision from a better fit — it is that 2376 points constrain Km far better
-than 5 averaged rates, and the shape of each curve constrains Km separately
-from Vmax. Note also that the two Vmax values differ by 5%: the initial-rate
-window includes some substrate depletion, which is precisely the bias the
-progress-curve fit removes.
+Km lands within 18% of the published 25 µM and kcat within 17% of 780 s⁻¹.
+Residual σ is 0.14 µM against a quantisation floor of 0.007 µM. That σ is
+20× the floor, which is a statement about the *fit*: the single-substrate
+model with no product inhibition is not being forced onto the traces over
+36–65% conversion. It is **not** evidence about what the 0.14 µM consists of —
+with lag-1 autocorrelation at 0.94–1.00 the residual is a smooth per-trace
+curve, not instrument noise, so "σ genuinely describes these traces" is the
+only defensible reading of it.
+
+The real gain over the initial-rate fit is the **Km standard error, about 2×
+(5.03 → 2.21 µM), not 25×**. The shape of each curve constrains Km separately
+from Vmax and 18 traces beat 5 averaged rates, but the 25× figure came from
+the i.i.d. SE and is wrong. Note also that the two Vmax values differ by 5%:
+the initial-rate window *could* include substrate depletion, but this dataset
+does not show it — the gap is 0.75 of one initial-rate SE, and sweeping the
+window from 5% to 40% moves Vmax from 35.24 to 34.99 with no trend. The 5%
+gap is not evidence of a depletion bias.
 
 `kcat` is 1.16× the published value, so `activation_fraction()` reports the
 preparation as 116% active rather than rescaling it away. A real preparation
