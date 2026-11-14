@@ -166,6 +166,8 @@ src/enzkin/
     pairing.py     joins measured IC50 to measured Ki, tests the ratio
                    Cheng-Prusoff predicts against the ratio observed
     structure.py   PDB parsing, binding-site and contact geometry
+    qsar.py        RDKit 2D descriptors, LOOCV, permutation null -- the
+                   structure-affinity test on congeneric series
     datasets.py    the published traces (Frere 2023) and the ChEMBL tables
     simulate.py    synthetic data with known parameters
     plotting.py    figures
@@ -176,11 +178,15 @@ scripts/
     fetch_chembl_dhfr.py   pull the IC50/Ki tables with assay descriptions
     ic50_to_ki.py          Cheng-Prusoff applied to the real IC50 series
     validate_cheng_prusoff.py  the conversion tested against measured Ki
-tests/             120 tests: limiting cases on the rate laws, parameter
+    fetch_chembl_smiles.py canonical SMILES for the Ki compounds (cached)
+    qsar_congeneric.py     2D descriptors vs Ki, with a permutation null
+tests/             149 tests: limiting cases on the rate laws, parameter
                    recovery, CI coverage, mechanism identification,
                    progress-curve recovery, Cheng-Prusoff limits and
                    round trips, IC50/Ki pairing on the real ChEMBL tables,
-                   PDB geometry on real structures
+                   PDB geometry on real structures, descriptors against
+                   textbook constants, Spearman/LOOCV against SciPy, and
+                   the permutation null on data with and without signal
 ```
 
 ## Setup
@@ -192,12 +198,19 @@ python -m venv .venv
 .venv/Scripts/python scripts/validate_fits.py
 ```
 
+The descriptor analysis is the one part that needs RDKit, which is an
+optional extra (`pip install -e ".[qsar]"`) because it is a large binary
+wheel and every other module here runs without it. The two tests that need it
+skip cleanly when it is absent, and `tests/test_qsar.py` is otherwise
+independent of it: the statistics are tested against SciPy, which is already
+a dependency.
+
 ## Still to do
 
-Updated after the published-data pass and the IC50/Ki validation. All four
-original items are done. Two of them are done only as far as the available
-data honestly allows, and what is left in those is written down rather than
-quietly dropped.
+Updated after the published-data pass, the IC50/Ki validation, and the
+congeneric-series descriptor test. None of the original items is still open;
+three of them are done only as far as the available data honestly allows, and
+what is left in those is written down rather than quietly dropped.
 
 - ~~Fit published datasets rather than only simulated ones~~ — **done.**
   Eighteen experimental traces of *Enterobacter cloacae* P99 class C
@@ -259,10 +272,29 @@ quietly dropped.
 - ~~Link Ki values to binding-site structure from the PDB~~ — **done**, and
   deliberately limited. Measured Ki values are joined to crystal structures
   via the PDB's chemical-component ChEMBL cross-reference, and the pocket is
-  described from coordinates. **Open: an actual structure-affinity
-  relationship.** One protein with two ligands that have both a measured Ki
-  and a deposited structure cannot support one. That needs a congeneric
-  series or mutagenesis data, not more code.
+  described from coordinates.
+
+- ~~Structure-affinity relationship~~ — **done, and the answer is both yes and
+  no, depending on which series.** The claim that stood here (that one protein
+  with two ligands cannot support a relationship, and that it needs a
+  congeneric series or mutagenesis data) was right about the requirement and
+  wrong about the data: the congeneric series was already in the Ki table.
+  Three papers in `data/chembl_dhfr/ecoli_dhfr_ki.csv` are single-assay
+  congeneric sets, and they give two different answers. See below.
+
+- **Open: what the two working series do not establish.** The signal in the
+  72–73 compound sets is real against a permutation null, but it is largely
+  captured by molecular weight alone, and one of the two sets spans nine
+  Murcko scaffolds, so descriptor spread there partly encodes chemotype. What
+  would settle it is a single-scaffold series of ~70+ compounds measured in
+  one assay with [S] and [E] reported, or a free-energy calculation against
+  the actual 4DFR/1DDR poses rather than 2D descriptors. Neither is in the
+  data here, and inventing a pose would be worse than the descriptor result.
+  The other gap is coverage at the tight end: the 1985 series spans
+  0.021–16 nM and so has 12 compounds in the 1–100 nM band, but the two large
+  series are dominated by weak binders (33 of 73 and 13 of 72 fall in
+  1–100 nM, the rest weaker), so their R² is carried by compounds no
+  medicinal chemist would pursue.
 
 ### Something the published data forced
 
@@ -391,11 +423,82 @@ protein, and contacts including 14 H-bonds and 9 salt bridges.
 
 Two things this is not. It is not a Shrake-Rupley SASA calculation — burial is
 a contact-count fraction. And it is not a structure-affinity relationship:
-with one protein and two ligands that have both a measured Ki and a deposited
-structure, any correlation would be anecdotal. The chain-selection hazard is
+with one protein and two ligands, any correlation would be anecdotal. That
+second gap is now addressed from a different direction, with 2D descriptors
+rather than coordinates — see the next section. The chain-selection hazard is
 real too: 4DFR contains both an *E. coli* and a *Lactobacillus casei* copy,
 and picking the wrong one would compare an *E. coli* affinity to the wrong
 protein while looking entirely normal.
+
+## Structure-affinity, on the congeneric series that was already here
+
+`scripts/qsar_congeneric.py`, `src/enzkin/qsar.py`. Ten RDKit 2D descriptors
+(MW, logP, TPSA, HBD, HBA, rotatable bonds, rings, aromatic rings, fraction
+Csp3, molar refractivity) against log10 Ki, with leave-one-out
+cross-validation and a **1000-shuffle permutation null**. RDKit 2026.09.2.
+SMILES come from ChEMBL's molecule endpoint via `scripts/fetch_chembl_smiles.py`
+and are committed (20 KB) so the analysis runs offline.
+
+The permutation null is the whole point, and it is not a formality. With 21
+compounds and 11 fitted parameters, noise routinely produces the kind of R²
+that looks like a finding. So each shuffle refits the *entire* pipeline —
+standardisation, folds, least squares — on a scrambled Ki vector, and the
+question is how often chance reaches the observed score.
+
+| paper | n | des/param | Ki span | LOO R² | best single descriptor | p_perm |
+|---|---|---|---|---|---|---|
+| CHEMBL1123078 (J Med Chem 1985) | 21 | 1.9 | 0.021–16 nM (762×) | **−1.021** | HBD, 0.182 | 0.678 |
+| CHEMBL1129627 (J Med Chem 1996) | 73 | 6.6 | 1.35–912000 nM | **0.326** | MW, 0.222 | ≤0.001 |
+| CHEMBL1124156 (J Med Chem 1988) | 72 | 6.6 | 0.012–912000 nM | **0.624** | MW, 0.458 | ≤0.001 |
+
+(`p_perm` is floored at 1/(n_perm+1) = 0.001; on both larger series no shuffle
+reached the observed score, so the report says that rather than quoting the
+arithmetic.)
+
+**The tight series fails, and that is the informative result.** The
+21-compound set — the most congeneric one, 20 of 21 compounds sharing a single
+Murcko scaffold — has an LOO R² of −1.021, i.e. worse than predicting the
+mean, with p_perm 0.678. Its best univariate descriptor does not reach
+significance either (|rho| ≤ 0.37, p ≥ 0.10). With 1.9 observations per
+parameter, this series **is too small to support a descriptor model**, and the
+fit is not reported as if it were one.
+
+The two ~72-compound series do show signal, and the honesty checks say it
+survives them rather than evaporating:
+
+- **It is not tail-driven.** Dropping every compound with Ki ≥ 100 µM (1 and 2
+  compounds respectively) leaves LOO R² = 0.582 and 0.736 with p_perm = 0.005
+  on 200 shuffles. The correlations get *stronger*, not weaker, so they are not
+  an artefact of a few barely-binding outliers.
+- **The permutation null is genuinely against us.** On the 73-compound set the
+  shuffled R² distribution has mean −0.201, 95th percentile −0.052 and maximum
+  0.098 against an observed 0.326; on the 72-compound set, mean −0.215, 95th
+  percentile −0.040, maximum 0.146 against 0.624.
+- **But a single descriptor does most of the work.** MW alone reaches 0.222 and
+  0.458, and the ten-descriptor model adds only +0.104 and +0.166 over it. The
+  direction is negative in every case: bigger, more polar, more flexible
+  compounds bind *worse* in this series. That is consistent with a size/shape
+  penalty against a fixed pocket, not with a detailed complementarity model,
+  and it would not be safe to read any individual descriptor coefficient as a
+  design rule.
+
+So the plain answer, which the earlier README said could not be given: **a
+structure-affinity relationship is present in the 72–73 compound series and
+absent — indistinguishable from chance — in the 21-compound one.** The
+binding constraint is sample size, exactly as claimed, but the threshold sits
+near 70 congeners, not at "impossible".
+
+Caveats worth stating rather than burying. The 1988 and 1996 papers are
+QSAR-era datasets measured by different groups on different days, and 2D
+descriptors cannot see the pose. CHEMBL1124156 (the 1988 set) contains 9
+Murcko scaffolds, so "congeneric" is generous there — the descriptor spread
+partly reflects chemotype, and that is one way a QSAR looks predictive without
+being mechanistic. The 1996 set is the cleaner test at 66 of 73 on one
+scaffold. Neither result is a prediction about a new compound; both are
+descriptions of variation inside a series that was already measured.
+
+Outputs: `results_qsar.txt`, `results/qsar_series.csv`.
+
 
 ## Note on how this was built
 

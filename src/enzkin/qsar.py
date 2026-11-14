@@ -21,12 +21,13 @@ compounds, a 3D descriptor would be describing an invented pose.
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
 try:  # pragma: no cover - exercised by the import guard test
     from rdkit import Chem, RDLogger
-    from rdkit.Chem import Crippen, Descriptors, Lipinski, rdMolDescriptors
-    from rdkit.Chem import rdMolDescriptors as _rdmd
+    from rdkit.Chem import Crippen, Descriptors, Lipinski
 except ImportError:  # pragma: no cover
     Chem = None
     RDLogger = None
@@ -199,20 +200,8 @@ def _betacf(a, b, x, itmax=200, eps=3e-14):
 
 
 def _log_gamma(z):
-    """Lanczos approximation to ln Gamma(z) for z > 0."""
-    g = 7.0
-    c = (0.99999999999980993, 676.5203681218851, -1259.1392167224028,
-         771.32342877765313, -176.61502916214059, 12.507343278686905,
-         -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7)
-    if z < 0.5:
-        return (np.log(np.pi / np.sin(np.pi * z))
-                - _log_gamma(1.0 - z))
-    z -= 1.0
-    a = c[0]
-    t = z + g + 0.5
-    for i in range(1, 10):
-        a += c[i] / (z + i)
-    return 0.5 * np.log(2 * np.pi) + (z + 0.5) * np.log(t) - t + np.log(a)
+    """ln Gamma(z), via the standard library rather than a hand-rolled series."""
+    return math.lgamma(z)
 
 
 def standardise(X):
@@ -288,6 +277,36 @@ def loocv_r2(X, y, ridge=False, alpha=1.0):
     return r2_score(y, loocv_predictions(X, y, ridge=ridge, alpha=alpha))
 
 
+def univariate_scan(X, names, y):
+    """Spearman rho and p for each descriptor against y, sorted by |rho|."""
+    out = []
+    for j, name in enumerate(names):
+        rho, p = spearman(X[:, j], y)
+        out.append({"descriptor": name, "rho": rho, "p_value": p,
+                    "loocv_r2_single": loocv_r2(X[:, [j]], y)})
+    out.sort(key=lambda d: -abs(d["rho"]))
+    return out
+
+
+def parsimony(X, names, y):
+    """Best single descriptor's LOO R2 against the full model's.
+
+    The comparison that decides whether the ten-descriptor model earned its
+    parameters. If one column does as well as ten, the ten are not finding
+    structure -- they are spending degrees of freedom, and the honest model
+    to report is the one-column one.
+    """
+    scan = univariate_scan(X, names, y)
+    best = max(scan, key=lambda d: d["loocv_r2_single"])
+    full = loocv_r2(X, y)
+    return {
+        "best_descriptor": best["descriptor"],
+        "best_single_r2": float(best["loocv_r2_single"]),
+        "full_r2": float(full),
+        "improvement": float(full - best["loocv_r2_single"]),
+    }
+
+
 def permutation_null(X, y, observed_r2, n_perm=1000, seed=0, ridge=False,
                      alpha=1.0):
     """Shuffle y `n_perm` times, refit, and see how often chance matches.
@@ -323,14 +342,32 @@ def permutation_null(X, y, observed_r2, n_perm=1000, seed=0, ridge=False,
     }
 
 
-def univariate_scan(X, names, y):
-    """Spearman rho and p for each descriptor against y, sorted by |rho|."""
-    out = []
-    for j, name in enumerate(names):
-        rho, p = spearman(X[:, j], y)
-        out.append({"descriptor": name, "rho": rho, "p_value": p})
-    out.sort(key=lambda d: -abs(d["rho"]))
-    return out
+def truncation_sensitivity(X, y, ki_nM, cutoff_nM=100000.0, n_perm=200,
+                           seed=0):
+    """Refit after dropping the weakest compounds, to test the tail.
+
+    A series that runs to a millimolar Ki contains compounds that barely
+    bind, and those rows sit at the far end of every size descriptor. If the
+    correlation dies once they are gone, then what was fitted is 'big
+    molecules bind worse', not a structure-affinity relationship worth
+    reporting. Also reports the single-descriptor R2 on the truncated set,
+    so a large gain from ten columns can be seen for what it is.
+    """
+    X = np.asarray(X, dtype=float)
+    y = np.asarray(y, dtype=float)
+    keep = np.asarray(ki_nM, dtype=float) < cutoff_nM
+    n_dropped = int((~keep).sum())
+    if keep.sum() < 10 or n_dropped == 0:
+        return {"applicable": False, "cutoff_nM": cutoff_nM,
+                "n_dropped": n_dropped, "n_kept": int(keep.sum())}
+    Xk, yk = X[keep], y[keep]
+    r2 = loocv_r2(Xk, yk)
+    single = max(loocv_r2(Xk[:, [j]], yk) for j in range(Xk.shape[1]))
+    null = permutation_null(Xk, yk, r2, n_perm=n_perm, seed=seed)
+    return {"applicable": True, "cutoff_nM": cutoff_nM,
+            "n_dropped": n_dropped, "n_kept": int(keep.sum()),
+            "loocv_r2": float(r2), "best_single_r2": float(single),
+            "p_perm": float(null["p_perm"]), "n_perm": int(n_perm)}
 
 
 def collinearity(X, names):
