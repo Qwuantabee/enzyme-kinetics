@@ -36,12 +36,33 @@ from enzkin.datasets import load_chembl_dhfr_ki  # noqa: E402
 DATA_DIR = ROOT / "data" / "chembl_dhfr"
 SMILES_CSV = DATA_DIR / "ecoli_dhfr_smiles.csv"
 
-#: Paper (document_chembl_id) -> label for the report.
+#: Paper (document_chembl_id) -> label for the report. Citations are read
+#: from ChEMBL's document records and quoted in the README, not guessed.
 SERIES_LABELS = {
-    "CHEMBL1123078": "21 compounds, Ki 0.021-16 nM",
-    "CHEMBL1129627": "73 compounds",
-    "CHEMBL1124156": "72 compounds",
+    "CHEMBL1123078": "J Med Chem 1985, doi:10.1021/jm00381a008",
+    "CHEMBL1129627": "J Med Chem 1996, doi:10.1021/jm960197z",
+    "CHEMBL1124156": "J Med Chem 1988, doi:10.1021/jm00402a025",
 }
+
+
+def scaffold_counts(rows):
+    """Murcko scaffold -> compound count, to show how congeneric a series is.
+
+    A 'congeneric series' is a claim about chemistry, and the cheap way to
+    check it is to strip every molecule to its ring system and count the
+    distinct results. One scaffold over 20 compounds is a real series; many
+    scaffolds is a platter of unrelated chemotypes whose descriptor spread
+    will look predictive for reasons that have nothing to do with binding.
+    """
+    from collections import Counter
+    from rdkit.Chem.Scaffolds import MurckoScaffold
+    counts = Counter()
+    for _cid, smi, _desc in rows:
+        mol = qsar.parse_smiles(smi)
+        if mol is None:
+            continue
+        counts[MurckoScaffold.MurckoScaffoldSmiles(mol=mol)] += 1
+    return counts
 
 
 def read_smiles(path=None):
@@ -56,13 +77,17 @@ def read_smiles(path=None):
                 for r in csv.DictReader(fh)}
 
 
-def series_rows(document_id, ki_rows=None, smiles=None, wild_type_only=True):
+def series_rows(document_id, ki_rows=None, smiles=None):
     """Compounds in one paper with both a Ki and a parseable structure.
 
     One row per compound: if a compound appears in the paper more than once
     the geometric mean Ki is taken, which is the natural average for
     affinities (they are log-scaled quantities). The count of such
     duplicates is returned so the report can say how many there were.
+
+    `ki_rows` should come from enzkin.datasets.load_chembl_dhfr_ki, which
+    applies the mutant filter; doing that filter here as well would mean two
+    places could disagree about which compounds are wild type.
     """
     ki_rows = load_chembl_dhfr_ki() if ki_rows is None else ki_rows
     smiles = read_smiles() if smiles is None else smiles
@@ -70,8 +95,6 @@ def series_rows(document_id, ki_rows=None, smiles=None, wild_type_only=True):
     for r in ki_rows:
         if r["document_chembl_id"] != document_id:
             continue
-        if wild_type_only and r["assay_description"]:
-            pass  # load_chembl_dhfr_ki already applied the mutant filter
         by_id.setdefault(r["molecule_chembl_id"], []).append(r["ki_nM"])
     dupes = sum(1 for v in by_id.values() if len(v) > 1)
     wanted = {cid: float(np.exp(np.log(v).mean())) for cid, v in by_id.items()}
@@ -117,6 +140,10 @@ def analyse(document_id, n_perm=1000, seed=0, ki_rows=None, smiles=None):
         "null": null,
         "univariate": qsar.univariate_scan(X, names, y),
         "collinearity": qsar.collinearity(X, names),
+        "parsimony": qsar.parsimony(X, names, y),
+        "truncation": qsar.truncation_sensitivity(
+            X, y, s["ki_nM"], n_perm=min(200, n_perm), seed=seed),
+        "scaffolds": scaffold_counts(s["rows"]),
         "pearson_in_sample": float(np.corrcoef(y, loo)[0, 1]),
     }
 
@@ -132,6 +159,7 @@ def verdict(a):
     p = a["null"]["p_perm"]
     r2 = a["loocv_r2"]
     n = a["n"]
+    par = a["parsimony"]
     if r2 <= 0:
         return (
             f"no support: cross-validated R2 = {r2:.3f} is worse than "
@@ -139,10 +167,17 @@ def verdict(a):
             f"all (permutation p = {p:.3f})"
         )
     if p < 0.05:
+        tail = ""
+        if par["improvement"] <= 0.02:
+            tail = (
+                f"; note that {par['best_descriptor']} alone reaches "
+                f"R2 = {par['best_single_r2']:.3f}, so the ten-descriptor "
+                f"model adds nothing over one column"
+            )
         return (
             f"consistent with a structure-affinity relationship: "
             f"LOO R2 = {r2:.3f}, permutation p = {p:.3f} over "
-            f"{a['null']['n_perm']} shuffles with n = {n}"
+            f"{a['null']['n_perm']} shuffles with n = {n}{tail}"
         )
     return (
         f"too small to support a descriptor model: LOO R2 = {r2:.3f} looks "
@@ -150,6 +185,19 @@ def verdict(a):
         f"{a['null']['n_perm']} permutations (p = {p:.3f}), so with n = {n} "
         f"that fit is indistinguishable from chance"
     )
+
+
+def _perm_note(nl):
+    """Wording for a p value sitting at the permutation floor.
+
+    With 1000 shuffles the smallest attainable p is 1/1001, so reporting
+    'p = 0.001' implies more resolution than the test has. When no shuffle
+    reached the observed score, say so instead of quoting the arithmetic.
+    """
+    floor = 1.0 / (nl["n_perm"] + 1.0)
+    if nl["p_perm"] <= floor + 1e-12:
+        return "no shuffle reached it"
+    return f"p = {nl['p_perm']:.3f}"
 
 
 def format_report(results, lines_out=None):
@@ -177,15 +225,25 @@ def format_report(results, lines_out=None):
                if ratio < 5 else ""))
         add(f"Ki span: {s['ki_nM'].min():g} to {s['ki_nM'].max():g} nM "
             f"({s['ki_nM'].max() / s['ki_nM'].min():.0f}x)")
+        sc = a["scaffolds"]
+        top = sc.most_common(1)[0] if sc else ("", 0)
+        add(f"Murcko scaffolds: {len(sc)} distinct; largest covers "
+            f"{top[1]}/{sum(sc.values())} compounds")
         add("")
-        add("Univariate Spearman against log10 Ki (sorted by |rho|):")
-        add(f"{'descriptor':<16}{'rho':>8}{'p':>10}")
+        add("Univariate Spearman against log10 Ki (sorted by |rho|), with the")
+        add("leave-one-out R2 of each descriptor used alone:")
+        add(f"{'descriptor':<16}{'rho':>8}{'p':>10}{'LOO R2':>10}")
         for d in a["univariate"]:
-            add(f"{d['descriptor']:<16}{d['rho']:>8.3f}{d['p_value']:>10.4f}")
+            add(f"{d['descriptor']:<16}{d['rho']:>8.3f}{d['p_value']:>10.4f}"
+                f"{d['loocv_r2_single']:>10.3f}")
         add("")
         c = a["collinearity"]
         add(f"Most collinear descriptor pair: {c['pair'][0]} vs {c['pair'][1]}, "
             f"|rho| = {c['abs_r']:.3f}")
+        par = a["parsimony"]
+        add(f"Parsimony: best single descriptor {par['best_descriptor']} gives "
+            f"LOO R2 = {par['best_single_r2']:.3f}; the ten-descriptor model "
+            f"gives {par['full_r2']:.3f} (gain {par['improvement']:+.3f})")
         add("")
         add(f"Multivariable model, leave-one-out: R2 = {a['loocv_r2']:.3f}, "
             f"corr(observed, LOO-predicted) = {a['pearson_in_sample']:.3f}")
@@ -193,7 +251,21 @@ def format_report(results, lines_out=None):
         add(f"Permutation null ({nl['n_perm']} shuffles, seed {nl['seed']}): "
             f"mean R2 = {nl['null_mean']:.3f}, "
             f"95th pct = {nl['null_p95']:.3f}, max = {nl['null_max']:.3f}")
-        add(f"p_perm = {nl['p_perm']:.3f}")
+        add(f"p_perm = {nl['p_perm']:.3f} ({_perm_note(nl)})")
+        add("")
+        tr = a["truncation"]
+        if tr["applicable"]:
+            add(f"Sensitivity, dropping Ki >= {tr['cutoff_nM']:g} nM "
+                f"({tr['n_dropped']} compound"
+                f"{'s' if tr['n_dropped'] != 1 else ''}, leaving "
+                f"n = {tr['n_kept']}): "
+                f"LOO R2 = {tr['loocv_r2']:.3f}, best single descriptor "
+                f"R2 = {tr['best_single_r2']:.3f}, "
+                f"p_perm = {tr['p_perm']:.3f} ({tr['n_perm']} shuffles)")
+        else:
+            add(f"Sensitivity, dropping Ki >= {tr['cutoff_nM']:g} nM: "
+                f"not applicable ({tr['n_dropped']} would be dropped, "
+                f"{tr['n_kept']} kept)")
         add("")
         add("VERDICT: " + verdict(a))
         add("")
