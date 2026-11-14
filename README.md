@@ -270,10 +270,16 @@ Two errors that simulation could never have produced, both caught by reading
 the real records rather than trusting them:
 
 **The instrument's number format.** Later time values in these files are
-written `1.008.333`, meaning 1.008333 min. `float()` reads that as 1008.333,
-which stretches a trace by 1000×. The resulting curve still fits a
-Michaelis-Menten model beautifully — it just returns a Vmax three orders of
-magnitude too small. Nothing in the fit diagnostics would have flagged it.
+written `1.008.333`, meaning 1.008333 min — a dot used as a thousands
+separator on top of a decimal point. `float()` raises `ValueError` on that
+string rather than misreading it, which is the louder and safer failure; the
+subtler trap is the value one column over, `0.008333`, which parses cleanly
+while the trace's later timestamps are what actually carry the thousands dot.
+Whatever the handling, the resulting curve still fits a Michaelis-Menten
+model beautifully — it just returns a Vmax wrong by orders of magnitude.
+Nothing in the fit diagnostics would have flagged it, which is why the parser
+strips the spurious dot explicitly and `tests/test_datasets.py` pins the
+conversion.
 
 **Mutants hiding in a Ki table.** Methotrexate appears five times in the
 ChEMBL Ki records for *E. coli* DHFR with values of 0.001, 0.021, 330, 2400

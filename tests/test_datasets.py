@@ -24,10 +24,12 @@ from enzkin import datasets, fitting, progress
 
 
 def test_parses_instrument_thousands_dot_format():
-    """The archive writes '1.008.333' for 1.008333 min. Naive float() turns
-    that into 1008.333 and silently stretches the trace by 1000x, which still
-    fits a Michaelis-Menten curve perfectly -- it just returns a Vmax three
-    orders of magnitude too small. This is the format guard."""
+    """The archive writes '1.008.333' for 1.008333 min -- a dot used as a
+    thousands separator on top of the decimal point. `float()` raises
+    ValueError on that string, so the failure is loud rather than silent; the
+    silent trap is mis-handling it as 1008.333, which stretches the trace by
+    1000x and still fits a Michaelis-Menten curve perfectly while returning a
+    Vmax three orders of magnitude too small. This is the format guard."""
     t, a = datasets.load_trace("vo1001")
     assert t[0] == 0.0
     assert t[-1] < 5.0, "time axis was not parsed correctly"
