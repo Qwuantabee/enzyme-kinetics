@@ -17,9 +17,16 @@ Two analyses of the same 18 traces:
                   Michaelis-Menten on the five averages
   progress curves the integrated rate equation fitted to every point
 
-They should agree. Where they disagree, the reason is substrate depletion
-inside the initial-rate window, and the progress-curve value is the one to
-trust because it does not depend on where the window was cut.
+They should agree. Where they disagree, substrate depletion inside the
+initial-rate window is one candidate explanation -- but it is a candidate to
+be tested, not an assumption, and on this dataset the Vmax gap is under one
+initial-rate standard error while the window sweep shows no trend, so the
+data do not support the depletion story.
+
+The Km comparison is the substantive one, and it is reported with a
+trace-level bootstrap: the residuals in each trace are strongly
+autocorrelated, so an i.i.d. standard error over all points is not an
+uncertainty at all.
 """
 
 import sys
@@ -104,6 +111,14 @@ def main():
     out(f"conversion reached: {min(conv):.0%} to {max(conv):.0%} of [S]0")
     prog = progress.fit_progress_global(traces)
     out(prog.summary())
+    # The residuals inside a trace are autocorrelated, so the i.i.d. SE above
+    # is not an uncertainty: resample traces, which are the real replicates.
+    boot = progress.cluster_se(traces, n_boot=400, seed=0)
+    out(f"  {boot.n_boot}-trace cluster bootstrap: "
+        f"km = {boot.km:.2f} +/- {boot.km_stderr:.2f} uM, "
+        f"95% [{boot.km_ci_cluster[0]:.2f}, {boot.km_ci_cluster[1]:.2f}]")
+    out(f"  cluster SE / i.i.d. SE = "
+        f"{boot.km_stderr / boot.km_stderr_iid:.0f}x on Km")
     kcat_prog = datasets.kcat_from_vmax(prog.vmax)
     out(f"  kcat = {kcat_prog:.0f} s^-1   "
         f"({datasets.activation_fraction(kcat_prog):.2f} x published)")
@@ -114,14 +129,20 @@ def main():
     for name, vmax, km, se_km in (
         ("initial rates", rate_fit.params["vmax"], rate_fit.params["km"],
          rate_fit.stderr["km"]),
-        ("progress", prog.vmax, prog.km, prog.km_stderr),
+        ("progress", prog.vmax, prog.km, boot.km_stderr),
     ):
         kcat = datasets.kcat_from_vmax(vmax)
         eff = kcat / (km * 1e-6)
         out(f"{name:14} {vmax:9.2f} {km:9.2f} {kcat:8.0f} {eff / 1e6:10.2f}e6")
     out(f"Km relative SE: initial rates "
         f"{rate_fit.stderr['km'] / rate_fit.params['km']:.1%}, "
-        f"progress {prog.km_stderr / prog.km:.1%}")
+        f"progress {boot.km_stderr / prog.km:.1%} (cluster bootstrap)")
+
+    out("")
+    out(f"Vmax gap between the two analyses: "
+        f"{rate_fit.params['vmax'] - prog.vmax:.2f} uM/min = "
+        f"{(rate_fit.params['vmax'] - prog.vmax) / rate_fit.stderr['vmax']:.2f} "
+        f"initial-rate SE. A gap under one SE is not evidence of anything.")
 
     window_sensitivity()
 

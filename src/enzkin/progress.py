@@ -60,8 +60,8 @@ class ProgressFit:
     vmax: float
     km: float
     baselines: np.ndarray
-    vmax_stderr: float
-    km_stderr: float
+    vmax_stderr_iid: float
+    km_stderr_iid: float
     n_points: int
     n_traces: int
     rss: float
@@ -69,6 +69,38 @@ class ProgressFit:
     s0_used: np.ndarray
     success: bool = True
     message: str = ""
+    # Trace-level (cluster) bootstrap, when it was run. These are the numbers
+    # to quote: the i.i.d. values treat 2376 points from 18 traces as 2376
+    # independent observations, and the residuals of a real trace are not
+    # independent from point to point.
+    vmax_stderr_cluster: float = np.nan
+    km_stderr_cluster: float = np.nan
+    km_ci_cluster: tuple = ()
+    n_boot: int = 0
+    # Per-trace lag-1 residual autocorrelation, diagnostics not a correction.
+    lag1: tuple = ()
+
+    @property
+    def lag1_median(self):
+        return float(np.median(self.lag1)) if len(self.lag1) else np.nan
+
+    @property
+    def km_stderr(self):
+        """The honest Km standard error: cluster bootstrap if it was run.
+
+        Falls back to the i.i.d. value only when no bootstrap is available,
+        which is exactly the number that is wrong by an order of magnitude on
+        autocorrelated traces -- so callers that care should check
+        `n_boot > 0`.
+        """
+        return (self.km_stderr_cluster if np.isfinite(self.km_stderr_cluster)
+                else self.km_stderr_iid)
+
+    @property
+    def vmax_stderr(self):
+        return (self.vmax_stderr_cluster
+                if np.isfinite(self.vmax_stderr_cluster)
+                else self.vmax_stderr_iid)
 
     @property
     def p0(self):
@@ -76,10 +108,26 @@ class ProgressFit:
         return float(self.baselines[0]) if len(self.baselines) else 0.0
 
     def summary(self):
-        return (f"progress-curve fit: {self.n_traces} trace(s), "
-                f"{self.n_points} points, s={self.sigma:.4g}\n"
-                f"  vmax = {self.vmax:.5g} +/- {self.vmax_stderr:.3g}\n"
-                f"   km  = {self.km:.5g} +/- {self.km_stderr:.3g}")
+        lines = [f"progress-curve fit: {self.n_traces} trace(s), "
+                 f"{self.n_points} points, s={self.sigma:.4g}",
+                 f"  vmax = {self.vmax:.5g} +/- {self.vmax_stderr:.3g}",
+                 f"   km  = {self.km:.5g} +/- {self.km_stderr:.3g}"]
+        if self.n_boot:
+            lines.append(
+                f"         ({self.n_boot}-trace cluster bootstrap; "
+                f"i.i.d. SE was km {self.km_stderr_iid:.3g}, "
+                f"vmax {self.vmax_stderr_iid:.3g})")
+        else:
+            lines.append(
+                "         SE is i.i.d. over points -- understated when the "
+                "residuals are autocorrelated; run cluster_se()")
+        if len(self.lag1):
+            lo, hi = min(self.lag1), max(self.lag1)
+            lines.append(
+                f"  residual lag-1 autocorrelation: {lo:.2f} to {hi:.2f} "
+                f"across {len(self.lag1)} traces (median "
+                f"{self.lag1_median:.2f})")
+        return "\n".join(lines)
 
 
 def product_from_time(t, vmax, km, s0, baseline=0.0):
@@ -227,11 +275,100 @@ def _fit(ts, s0s, ps, fit_baseline=True):
     except np.linalg.LinAlgError:
         pass
 
+    # Per-trace lag-1 autocorrelation of the residuals. Reported, never used
+    # to rescale the i.i.d. SE: a single lag-overlap factor is not a valid
+    # correction when a trace's residuals are almost perfectly correlated
+    # (here 0.94-1.00), so the correction is the cluster bootstrap instead.
+    lag1 = []
+    for i, (t, p, s0) in enumerate(zip(ts, ps, s0s)):
+        res = product_from_time(t, vmax, km, s0, offs[i]) - p
+        lag1.append(_lag1(res))
+
     return ProgressFit(
         vmax=float(vmax), km=float(km), baselines=np.asarray(offs, dtype=float),
-        vmax_stderr=se_vmax, km_stderr=se_km,
+        vmax_stderr_iid=se_vmax, km_stderr_iid=se_km,
         n_points=n_points, n_traces=n_traces,
         rss=rss, sigma=float(np.sqrt(sigma2)) if dof > 0 else np.nan,
         s0_used=np.asarray(s0s, dtype=float),
         success=bool(out.success), message=out.message,
+        lag1=tuple(lag1),
     )
+
+
+def _lag1(res):
+    """Lag-1 autocorrelation of one trace's residuals, NaN if undefined."""
+    res = np.asarray(res, dtype=float)
+    if len(res) < 3:
+        return np.nan
+    a, b = res[:-1], res[1:]
+    if a.std() == 0 or b.std() == 0:
+        return np.nan
+    return float(np.corrcoef(a, b)[0, 1])
+
+
+def cluster_se(traces, n_boot=400, seed=0, fit_baseline=True, alpha=0.05):
+    """Trace-level (cluster) bootstrap of the global progress-curve fit.
+
+    The parameter of interest, Km, is shared across 18 traces, and the
+    residuals inside a trace are strongly autocorrelated (lag-1 0.94-1.00 on
+    the P99 data). Treating every point as an independent observation
+    understates the Km standard error by more than an order of magnitude.
+
+    Resampling whole traces treats each trace as the independent unit, which
+    is the level at which the data really replicate: the same enzyme
+    preparation, pipetting and drift are shared by every point in a trace.
+
+    Resampling is stratified by S0 by default -- each distinct substrate
+    concentration contributes the same number of traces as it originally
+    did -- because Km is identified by the *relative* shapes at different S0,
+    and an unstratified draw can leave the fit with almost no leverage.
+
+    Returns the point fit with `vmax_stderr_cluster`, `km_stderr_cluster`,
+    `km_ci_cluster` (percentile interval) and `n_boot` filled in.
+    """
+    traces = list(traces)
+    if not traces:
+        raise ValueError("no traces given")
+    if n_boot < 20:
+        raise ValueError("n_boot must be at least 20 for a usable SE")
+
+    point = _fit([np.asarray(t, float) for t, _p, _s in traces],
+                 [float(s) for _t, _p, s in traces],
+                 [np.asarray(p, float) for _t, p, _s in traces],
+                 fit_baseline=fit_baseline)
+
+    groups = {}
+    for tr in traces:
+        groups.setdefault(tr[2], []).append(tr)
+    keys = sorted(groups)
+
+    rng = np.random.default_rng(seed)
+    kms, vmaxs = [], []
+    for _ in range(n_boot):
+        sample = []
+        for k in keys:
+            members = groups[k]
+            pick = rng.integers(0, len(members), len(members))
+            sample.extend(members[i] for i in pick)
+        try:
+            f = _fit([np.asarray(t, float) for t, _p, _s in sample],
+                     [float(s) for _t, _p, s in sample],
+                     [np.asarray(p, float) for _t, p, _s in sample],
+                     fit_baseline=fit_baseline)
+        except (ValueError, np.linalg.LinAlgError):
+            continue
+        if f.success and np.isfinite(f.km):
+            kms.append(f.km)
+            vmaxs.append(f.vmax)
+
+    if len(kms) < 20:
+        raise ValueError(f"only {len(kms)} of {n_boot} bootstrap fits converged")
+    kms = np.asarray(kms)
+    vmaxs = np.asarray(vmaxs)
+    lo, hi = np.percentile(kms, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+
+    point.km_stderr_cluster = float(kms.std(ddof=1))
+    point.vmax_stderr_cluster = float(vmaxs.std(ddof=1))
+    point.km_ci_cluster = (float(lo), float(hi))
+    point.n_boot = len(kms)
+    return point

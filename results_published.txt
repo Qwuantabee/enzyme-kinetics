@@ -25,13 +25,19 @@ conversion reached: 36% to 65% of [S]0
 progress-curve fit: 18 trace(s), 2376 points, s=0.1413
   vmax = 32.706 +/- 0.098
    km  = 29.572 +/- 0.185
+         SE is i.i.d. over points -- understated when the residuals are autocorrelated; run cluster_se()
+  residual lag-1 autocorrelation: 0.94 to 1.00 across 18 traces (median 1.00)
+  400-trace cluster bootstrap: km = 29.57 +/- 2.21 uM, 95% [25.74, 33.44]
+  cluster SE / i.i.d. SE = 12x on Km
   kcat = 909 s^-1   (1.16 x published)
 
 --- comparison ---
                     Vmax     Km uM     kcat    kcat/Km
 initial rates      34.45     33.98      957      28.16e6
 progress           32.71     29.57      909      30.72e6
-Km relative SE: initial rates 14.8%, progress 0.6%
+Km relative SE: initial rates 14.8%, progress 7.5% (cluster bootstrap)
+
+Vmax gap between the two analyses: 1.74 uM/min = 0.75 initial-rate SE. A gap under one SE is not evidence of anything.
 
 --- the paper's premise, measured on our fits ---
 lowest [S]0 = 11.1 uM = 0.33 x fitted Km
