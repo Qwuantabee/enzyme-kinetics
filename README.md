@@ -238,6 +238,9 @@ congeneric-series descriptor test. None of the original items is still open;
 three of them are done only as far as the available data honestly allows, and
 what is left in those is written down rather than quietly dropped.
 
+<details>
+<summary>The six completed items and what each found (click to expand)</summary>
+
 - ~~Fit published datasets rather than only simulated ones~~ — **done.**
   Eighteen experimental traces of *Enterobacter cloacae* P99 class C
   β-lactamase hydrolysing nitrocefin, from Frère, Verlaine & Matagne (2023),
@@ -349,6 +352,8 @@ what is left in those is written down rather than quietly dropped.
   wrong about the data: the congeneric series was already in the Ki table.
   Three papers in `data/chembl_dhfr/ecoli_dhfr_ki.csv` are single-assay
   congeneric sets, and they give two different answers. See below.
+
+</details>
 
 - **Open: what the two working series do not establish.** The signal is real
   against a permutation null and it survives restriction to a single Murcko
