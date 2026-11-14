@@ -354,3 +354,52 @@ def qsar_script_verdict(result):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod.verdict(result)
+
+
+# --------------------------------------------------------------------------
+# Direction of the effect -- the README got this backwards once
+# --------------------------------------------------------------------------
+
+QSAR_REPORT = ROOT / "results_qsar.txt"
+
+
+def _univariate_rho(report_text, descriptor, series_index):
+    """Pull one descriptor's rho out of a series block in results_qsar.txt."""
+    blocks = report_text.split("--- ")[1:]
+    block = blocks[series_index]
+    for line in block.splitlines():
+        parts = line.split()
+        if parts and parts[0] == descriptor and len(parts) >= 4:
+            return float(parts[1])
+    raise AssertionError(f"{descriptor} not listed in series block {series_index}")
+
+
+@pytest.mark.skipif(not QSAR_REPORT.exists(), reason="run scripts/qsar_congeneric.py")
+def test_molecular_weight_rho_is_negative_against_log10_ki():
+    """Lower Ki is tighter binding, so rho(MW, log10 Ki) < 0 means heavier binds tighter.
+
+    The README once described this as heavier compounds binding *worse*, which
+    is the opposite of what the artefact says. Pin the sign so a sign flip in
+    the prose, or in the analysis, cannot pass unnoticed.
+    """
+    text = QSAR_REPORT.read_text()
+    for series_index in (0, 1):
+        rho = _univariate_rho(text, "MW", series_index)
+        assert rho < 0, f"rho(MW) = {rho} in series block {series_index}"
+
+
+@pytest.mark.skipif(not QSAR_REPORT.exists(), reason="run scripts/qsar_congeneric.py")
+def test_the_most_negative_descriptors_are_not_uniform_and_hbd_is_the_exception():
+    """The 'every case' claim in the README was false: HBD is positive."""
+    text = QSAR_REPORT.read_text()
+    rho_mw = _univariate_rho(text, "MW", 0)
+    rho_hbd = _univariate_rho(text, "HBD", 0)
+    assert rho_mw < 0 < rho_hbd
+
+
+def test_negative_rho_against_log10_ki_means_tighter_binding():
+    """Arithmetic guard on the interpretation itself, independent of the data."""
+    ki = np.array([100.0, 10.0, 1.0])
+    mw = np.array([200.0, 300.0, 400.0])   # heavier molecule, tighter binding
+    rho, _p = stats.spearmanr(mw, np.log10(ki))
+    assert rho == -1.0
