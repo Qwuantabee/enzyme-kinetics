@@ -11,11 +11,12 @@ largest scaffold: C1=NC=NCC1Cc1ccccc1
 scaffold size: 66/73 compounds
 
 Between-scaffold share of each descriptor's variance (eta-squared):
-  Rings             1.000
-  AromaticRings     1.000
-  FractionCSP3      0.149
-  MolRefract        0.131
-  logP              0.115
+  (eta-squared is unadjusted; adjusted value and constancy flag alongside)
+  Rings             1.000  adj  1.000  constant within every scaffold
+  AromaticRings     1.000  adj  1.000  constant within every scaffold
+  FractionCSP3      0.149  adj  0.086
+  MolRefract        0.131  adj  0.066
+  logP              0.115  adj  0.049
 
 SUBSET n = 66 (constant descriptors: Rings, AromaticRings)
 Ki span in subset: 1.349 to 912011 nM (676064x)
@@ -31,11 +32,12 @@ largest scaffold: c1ccc(Cc2cncnc2)cc1
 scaffold size: 52/72 compounds
 
 Between-scaffold share of each descriptor's variance (eta-squared):
-  Rings             1.000
-  AromaticRings     1.000
-  RotB              0.221
-  FractionCSP3      0.196
-  MolRefract        0.172
+  (eta-squared is unadjusted; adjusted value and constancy flag alongside)
+  Rings             1.000  adj  1.000  constant within every scaffold
+  AromaticRings     1.000  adj  1.000  constant within every scaffold
+  RotB              0.221  adj  0.122
+  FractionCSP3      0.196  adj  0.093
+  MolRefract        0.172  adj  0.067
 
 SUBSET n = 52 (constant descriptors: Rings, AromaticRings)
 Ki span in subset: 0.01202 to 912011 nM (75874459x)
@@ -43,5 +45,5 @@ LOO R2 = 0.653; best single descriptor MW gives 0.644 (gain +0.009)
 Permutation null (1000 shuffles, seed 0): mean = -0.263, 95th pct = -0.034, max = 0.254
 p_perm = 0.001
 
-VERDICT: CHEMBL1124156: the signal survives -- within one scaffold LOO R2 = 0.653 on n = 52, p_perm = 0.001; note that MW alone reaches 0.644, so the within-scaffold fit is a size effect and the other nine descriptors add nothing
+VERDICT: CHEMBL1124156: the signal survives -- within one scaffold LOO R2 = 0.653 on n = 52, p_perm = 0.001; note that MW alone reaches 0.644, so the within-scaffold fit is a size effect and the other 7 non-constant descriptors add nothing
 

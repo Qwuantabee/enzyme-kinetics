@@ -4,6 +4,39 @@ Structure-affinity analysis of congeneric E. coli DHFR inhibitors
 Descriptors: RDKit 2D only (no conformers, no 3D pose). Ki modelled
 as log10(nM); one row per compound, geometric mean if repeated.
 
+--- CHEMBL1123078: J Med Chem 1985, doi:10.1021/jm00381a008
+compounds with a Ki: 21  (repeated in the paper: 0)
+missing structure:   0  unparseable SMILES: 0
+fitted:              n = 21, 10 descriptors + intercept = 11 parameters
+observations per parameter: 1.91   <-- below the ~5 usually wanted for a stable fit
+Ki span: 0.021 to 16 nM (762x)
+Murcko scaffolds: 2 distinct; largest covers 20/21 compounds
+
+Univariate Spearman against log10 Ki (sorted by |rho|), with the
+leave-one-out R2 of each descriptor used alone:
+descriptor           rho         p    LOO R2
+Rings             -0.369    0.0995    -0.098
+AromaticRings     -0.369    0.0995    -0.098
+MW                -0.367    0.1021    -0.076
+HBD               -0.359    0.1100     0.182
+MolRefract        -0.332    0.1418    -0.068
+RotB              -0.247    0.2798    -0.103
+logP              -0.167    0.4692    -0.323
+TPSA              -0.134    0.5625     0.125
+HBA                0.073    0.7543    -0.316
+FractionCSP3      -0.067    0.7743    -0.272
+
+Most collinear descriptor pair: Rings vs AromaticRings, |rho| = 1.000
+Parsimony: best single descriptor HBD gives LOO R2 = 0.182; the ten-descriptor model gives -1.021 (gain -1.203)
+
+Multivariable model, leave-one-out: R2 = -1.021, corr(observed, LOO-predicted) = -0.069
+Permutation null (1000 shuffles, seed 0): mean R2 = -0.947, 95th pct = -0.171, max = 0.229
+p_perm = 0.678 (p = 0.678)
+
+Sensitivity, dropping Ki >= 100000 nM: not applicable (0 would be dropped, 21 kept)
+
+VERDICT: no support: cross-validated R2 = -1.021 is worse than predicting the mean, so the descriptors do not predict Ki at all (permutation p = 0.678)
+
 --- CHEMBL1129627: J Med Chem 1996, doi:10.1021/jm960197z
 compounds with a Ki: 73  (repeated in the paper: 0)
 missing structure:   0  unparseable SMILES: 0

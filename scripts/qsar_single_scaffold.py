@@ -130,6 +130,15 @@ def descriptor_spread(rows, scaffolds):
     of each descriptor explained by scaffold identity (eta-squared from a
     one-way ANOVA-style decomposition). High values mean the descriptor is
     mostly a chemotype label.
+
+    eta_squared is UNADJUSTED: with k scaffold groups of uneven and sometimes
+    tiny size it is biased upward, so eta_squared_adj (1 - (1 - eta2)(N-1)/(N-k),
+    the epsilon-squared-style correction, floored at 0) is returned too.
+    constant_within is True when the descriptor has zero variance inside every
+    scaffold (ring counts here): eta_squared is then exactly 1 by
+    construction, the descriptor encodes the scaffold, and it carries no
+    within-scaffold information, so a single-scaffold fit has fewer usable
+    descriptors than the nominal ten.
     """
     X, names = qsar.descriptor_matrix(rows)
     labels = np.asarray([s if s is not None else "" for s in scaffolds])
@@ -142,7 +151,13 @@ def descriptor_spread(rows, scaffolds):
             grp = col[labels == lab]
             ss_between += grp.size * (grp.mean() - col.mean()) ** 2
         eta2 = ss_between / ss_tot if ss_tot > 0 else 0.0
-        out.append({"descriptor": name, "eta_squared": float(eta2)})
+        n_obs, k = col.size, len(set(labels.tolist()))
+        adj = (1.0 - (1.0 - eta2) * (n_obs - 1) / (n_obs - k)
+               if n_obs > k and ss_tot > 0 else 0.0)
+        const_within = bool(ss_tot > 0 and (ss_tot - ss_between) <= 1e-9 * ss_tot)
+        out.append({"descriptor": name, "eta_squared": float(eta2),
+                    "eta_squared_adj": float(max(adj, 0.0)),
+                    "constant_within": const_within})
     out.sort(key=lambda d: -d["eta_squared"])
     return out
 
@@ -170,10 +185,12 @@ def verdict(a, label):
         )
     if p < 0.05:
         if par["improvement"] <= 0.02:
+            n_other = 9 - len(a.get("constant_descriptors", []))
             tail = (
                 f"; note that {par['best_descriptor']} alone reaches "
                 f"{par['best_single_r2']:.3f}, so the within-scaffold fit is "
-                f"a size effect and the other nine descriptors add nothing"
+                f"a size effect and the other {n_other} non-constant "
+                f"descriptors add nothing"
             )
         else:
             tail = (
@@ -215,8 +232,12 @@ def format_report(records):
         add("")
         add("Between-scaffold share of each descriptor's variance "
             "(eta-squared):")
+        add("  (eta-squared is unadjusted; adjusted value and constancy flag "
+            "alongside)")
         for d in r["spread"][:5]:
-            add(f"  {d['descriptor']:<16}{d['eta_squared']:>7.3f}")
+            flag = "  constant within every scaffold" if d["constant_within"] else ""
+            add(f"  {d['descriptor']:<16}{d['eta_squared']:>7.3f}  "
+                f"adj {d['eta_squared_adj']:>6.3f}{flag}")
         add("")
         a = r["subset"]
         if a["too_small"]:
