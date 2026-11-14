@@ -102,6 +102,11 @@ def test_ratio_groups_reproduce_the_per_group_table():
         s = mf.group_stats(by_name[name])
         assert (s["n"], round(s["median"], 2), round(s["spread"], 2)) == (
             int(n), float(median), float(spread)), name
+    # the ranges quoted in the figure title and the README caption
+    assert "Per-group median ratios run from 3.0 to 20.9" in text
+    assert "per-group max/min ratio spreads run\nfrom 2.0x to 26.9x" in text
+    medians = [float(m) for _, _, m, _ in rows]
+    assert (min(medians), max(medians)) == (3.04, 20.95)
     assert sum(len(v) for _, v in d["groups"]) == d["n"] == 47
     # the pooled within-group SD recomputed from the pairs is the stored one
     big = [v for _, v in d["groups"] if len(v) >= 3]

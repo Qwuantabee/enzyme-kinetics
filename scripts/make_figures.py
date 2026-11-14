@@ -379,9 +379,14 @@ def fig_cp_ratio_spread():
     ax.set_ylabel("IC50 / Ki per compound\n(dimensionless, log scale)")
     ax.set_xlabel("assay condition (publication, or publication @ stated [S]); "
                   "SD = log10 SD within the group")
+    txt = _text("results_cheng_prusoff.txt")
+    med = _grab(txt, r"Per-group median ratios run from ([\d.]+) to ([\d.]+)",
+                "group-median range")
+    spr = _grab(txt, r"per-group max/min ratio spreads run\s+from ([\d.]+)x to ([\d.]+)x",
+                "per-group spread range")
     ax.set_title("The pooled IC50/Ki median is not any one assay's conversion factor:\n"
-                 "group medians run 3.0\u201320.9, within-group spreads 2.0\u00d7\u201326.9\u00d7",
-                 pad=40)
+                 f"group medians run {med.group(1)}\u2013{med.group(2)}, within-group spreads "
+                 f"{spr.group(1)}\u00d7\u2013{spr.group(2)}\u00d7", pad=40)
     handles = [
         Line2D([], [], marker="o", ls="", color="C0", markeredgecolor="black",
                markeredgewidth=0.45, label="one IC50/Ki pair"),
