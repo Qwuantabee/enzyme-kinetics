@@ -478,11 +478,17 @@ survives them rather than evaporating:
   percentile −0.040, maximum 0.146 against 0.624.
 - **But a single descriptor does most of the work.** MW alone reaches 0.222 and
   0.458, and the ten-descriptor model adds only +0.104 and +0.166 over it. The
-  direction is negative in every case: bigger, more polar, more flexible
-  compounds bind *worse* in this series. That is consistent with a size/shape
-  penalty against a fixed pocket, not with a detailed complementarity model,
-  and it would not be safe to read any individual descriptor coefficient as a
-  design rule.
+  sign of the correlation is against log10 Ki (nM), so a *negative* rho means
+  the descriptor raises affinity: bigger, more polar, more flexible compounds
+  bind *better* here. In CHEMBL1129627 rho(MW, log10 Ki) = −0.532,
+  MolRefract −0.436, HBA −0.352, TPSA −0.257, logP −0.207, RotB −0.118; the
+  one exception is HBD at +0.064 (p = 0.59), so the direction is not uniform
+  across descriptors, and CHEMBL1124156 repeats the pattern more strongly
+  (MW −0.507). A larger, more lipophilic ligand binding tighter is consistent
+  with a growing hydrophobic contact area rather than a size penalty, but 2D
+  descriptors cannot tell the two apart, so no individual coefficient should be
+  read as a design rule. Source: `results_qsar.txt` (univariate Spearman
+  blocks, both series).
 
 So the plain answer, which the earlier README said could not be given: **a
 structure-affinity relationship is present in the 72–73 compound series and
@@ -499,8 +505,10 @@ scaffold (52 of 72 compounds) the LOO R² is 0.653 against 0.624 for the whole
 set, p_perm = 0.001. What that restriction does show is that the fit is
 molecular weight and essentially only molecular weight (MW alone reaches
 0.644, a +0.009 gain for the other nine descriptors), so the honest reading of
-that series is a size penalty inside one chemotype, not a complementarity
-model. The 1996 set is the cleaner test at 66 of 73 on one scaffold, where the
+that series is a molecular-weight (size/hydrophobicity) effect inside one
+chemotype, not a complementarity model. Note again the sign: MW correlates
+negatively with log10 Ki, i.e. the heavier compounds in this series bind
+tighter, so this is not a penalty for being large. The 1996 set is the cleaner test at 66 of 73 on one scaffold, where the
 ten descriptors still add +0.109 over MW alone. Neither result is a prediction
 about a new compound; both are descriptions of variation inside a series that
 was already measured.
