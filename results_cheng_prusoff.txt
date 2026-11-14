@@ -2,39 +2,49 @@
 Cheng-Prusoff vs measured Ki: E. coli dihydrofolate reductase
 ==============================================================================
 target        ChEMBL CHEMBL1809
-IC50 records  482
+IC50 records  482 over 353 compounds and 42 publications; 29 are above 1e+06 nM (flagged outside_typical_range, kept)
 Ki records    266 total, 257 wild-type (9 point-mutant records excluded by the load_chembl_dhfr_ki mutant filter)
 compounds in both files        52
-  ... sharing a publication    35 (36 molecule-document pairs)
+  ... sharing a publication    35 (47 pairs; 36 if IC50 records of different stated [S] are pooled)
   ... paired on molecule only  52
 
 ------------------------------------------------------------------------------
 (a) observed IC50/Ki ratio distribution
 ------------------------------------------------------------------------------
-Ratios are formed per (molecule, document) after geometric-mean pooling of
-replicate measurements, because IC50 and Ki are log-scale quantities.
+Ratios are formed per (molecule, document, stated IC50 [S]) after
+geometric-mean pooling of replicate measurements, because IC50 and Ki
+are log-scale quantities.
 
-set                          n   median      Q1      Q3  log10SD           range
-same publication (strict)   36     7.47    6.61   20.58    0.407   0.71-30.0    
-same molecule (loose)       52     6.89    3.99   20.25    0.534   0.71-2110.2  
-strict, enzyme assays only  29    14.74    6.78   21.08    0.410   0.71-30.0    
+set                                  n   median      Q1      Q3  log10SD           range
+same publication (strict)           47     9.38    4.50   18.98    0.409   0.48-30.0    
+same molecule (loose)               52     6.89    3.99   20.25    0.534   0.71-2110.2  
+strict, IC50 pooled over [S]        36     7.47    6.61   20.58    0.407   0.71-30.0    
+strict, excl. antibacterial-desc.   40     9.99    4.75   20.25    0.418   0.48-30.0    
+strict, excl. IC50 > 1e6 nM         46     9.31    4.43   19.01    0.411   0.48-30.0    
 
-Median ratio for the defensible pairs: 7.47 (95% bootstrap CI 6.79 to 18.92),
-IQR 6.61 to 20.58, n = 36.
-2 of 36 pairs sit below 1, which the competitive model
-forbids (CHEMBL82985 0.71, CHEMBL1162149 0.90). Those are not evidence
-against the conversion -- they are evidence that a few paired records
-are not what their labels claim. They stay in the headline number.
-The full span is 42.5-fold, which sounds alarming and is
-the wrong number to quote: the ratio is not one number across papers,
-and section (c) shows why.
+Median ratio, same-publication pairs: 9.38, IQR 4.50 to 18.98, n = 47.
+  95% bootstrap CI, i.i.d. (treats pairs as independent): 5.08 to 11.05
+  95% bootstrap CI, cluster (resamples papers, then pairs; 6 clusters): 4.25 to 20.50
+  The cluster interval is the one to read: pairs from one paper share a
+  protocol. With this few clusters it is coarse and may under-cover.
+2 of 47 pairs sit below 1, which the competitive model
+forbids (CHEMBL82985 0.48, CHEMBL1162149 0.90). A ratio below 1 can come
+from a non-competitive mechanism, mismatched conditions or a record
+error; this data cannot say which. They stay in the headline number.
+The full span is 62.7-fold across papers; the per-paper
+spreads below are the more informative numbers.
 
-Per publication:
-document           n  median ratio   within-paper spread  implied [S]/Km
-CHEMBL3632554     14         20.95                2.03x         19.9
-CHEMBL1136127     11          6.79                9.88x          5.8
-CHEMBL1124568      7          4.21                6.25x          3.2
-CHEMBL5233242      3          3.04               26.90x          2.0
+Effect of keeping IC50 records at different stated [S] apart (C2): 36 pooled pairs -> 47 pairs; 22 pairs (11 molecules) come from the split document.
+Effect of excluding the 1 pair(s) whose IC50 is above 1e+06 nM: n 47 -> 46.
+
+Per assay condition (publication, or publication@[S] where one publication
+ran IC50 at two stated substrate concentrations):
+group                      n  median ratio   within spread  implied [S]/Km
+CHEMBL3632554             14         20.95          2.03x           19.9
+CHEMBL1136127@30uM        11          4.63         11.50x            3.6
+CHEMBL1136127@100uM       11          9.74         11.13x            8.7
+CHEMBL1124568              7          4.21          6.25x            3.2
+CHEMBL5233242              3          3.04         26.90x            2.0
 
 ------------------------------------------------------------------------------
 (b) what Cheng-Prusoff implies, and what assumption reconciles it
@@ -45,108 +55,122 @@ observed ratio gives the assay's substrate factor directly:
   observed ratio    implied [S]/Km
             1.00              0.00
             2.00              1.00
-            7.47              6.47
-           21.00             20.00
-           30.00             29.00
+            9.38              8.38
+            3.04              2.04
+           20.95             19.95
 
-Quoting one implied [S]/Km for the whole set would be misleading, and
-section (a) is the reason. The pooled median of 7.5 is an average
-over papers whose own median ratios run from 3.0 to 20.9,
-i.e. implied [S]/Km from about 2.0 to 20.
-Quoted per paper the factor is a concrete number of the size
-inhibition assays of this enzyme plausibly use; quoted across the
-whole set it is an average of incompatible things and means little.
+Per-group median ratios run from 3.0 to 20.9, i.e. implied [S]/Km from
+2.0 to 19.9. The pooled median (9.4) is an average over those and
+is not a conversion factor for any one assay.
 
-A single global [S]/Km CANNOT reconcile this data, and that is worth
-stating plainly: with one factor, every paper's median ratio would
-have to be the same number. They are not. What reconciles the data is
-a per-assay factor -- which is exactly what Cheng-Prusoff says the
-ratio is. So the median is reported because it summarises the set, not
-because it is the conversion factor.
-
-The assumptions that make that per-assay reading consistent: every
-pair is a competitive inhibitor; each paper ran a single [S]; and each
-IC50 is a true 50% inhibition point rather than a fitted midpoint off a
+The assumptions behind reading a ratio as an assay factor: every pair
+is a competitive inhibitor; each group ran a single [S]; and each IC50
+is a true 50% inhibition point rather than a fitted midpoint off a
 partial curve. Relax any of them and the ratio stops being an assay
-constant.
+constant. Nothing in these files constrains [S] for most assays, so for
+those no pair can confirm or refute the correction it implies.
 
-The assumption is NOT independently checkable here. Nothing in these
-files constrains [S], so no pair can confirm or refute the correction it
-implies. That is the ceiling of this test.
+Direct (1 + [S]/Km) check: compounds measured at two stated [S]
+  11 compounds in CHEMBL1136127 have IC50 at 30 and 100 uM
+  substrate (assay descriptions); their Ki assay description(s): ['Inhibition constant against Dihydrofolate reductase', 'Inhibition constant of compound against dihydrofolate reductase']
+  (no [S] stated for the Ki).
+  Cheng-Prusoff bounds IC50(100)/IC50(30) between 1 (Km >> S) and 3.33 (Km << S).
+  Measured ratio: median 2.18, range 1.45 to 2.77; 11 of 11 inside the bounds.
+  Km from the IC50 pair alone (Ki-free), median: 29.2 uM.
+  Km from each single condition's IC50/Ki ratio, median: 8.1 uM at 30 uM, 11.4 uM at 100 uM.
+  If Km were the single-condition value, the predicted IC50 ratio would be 2.84 (30-based Km) or 2.69 (100-based Km),
+  against the measured median 2.18. Per-compound values are in results/cheng_prusoff_two_substrate.csv.
+  The pair-derived Km is noisy (it divides by rho - 1 and rho is near 1 for some compounds),
+  so its median is a coarse number; both Km estimates are reported as measured, with no interval.
 
 ------------------------------------------------------------------------------
 (c) assay conditions vs genuinely different compounds
 ------------------------------------------------------------------------------
 Same-publication pairs are the tighter comparison: one lab, one
-protocol family, one enzyme preparation, and typically one substrate
-concentration. Same-molecule pairs that span publications mix all of
-those, so their scatter has more in it than assay variation alone.
+protocol family, one enzyme preparation. Same-molecule pairs that span
+publications mix all of those, so their scatter has more in it than
+assay variation alone.
 
-log10(ratio) variance decomposition, strict pairs (>=3 pairs/paper):
-  total   0.1701
-  between 0.0898  (52.8% of total)
-  within  0.0802  (47.2%)
-  4 papers, 35 pairs
+log10(ratio) variance decomposition, strict pairs (>=3 pairs/group):
+  total   0.1707
+  between 0.0876  (51.3% of total)
+  within  0.0831  (48.7%)
+  5 groups, 46 pairs
+  one-way ANOVA: F(4,41) = 12.86, p = 7.2e-07
+  same test, excl. antibacterial-described Ki: F(3,35) = 15.58, p = 1.3e-06, 53.5% explained
+  same test, IC50 pooled over [S]: F(3,31) = 13.69, p = 7.4e-06, 52.8% explained
 
-Between-paper differences are a 2.0-fold effect on the ratio;
-within-paper scatter is 1.9-fold. So roughly half the total
-variance in the ratio is 'which paper this came from', i.e. assay
-conditions, not 'which compound this is'. That is the pattern
-Cheng-Prusoff predicts. It is also what any per-assay systematic
-difference would produce, so it discriminates the conversion from
-noise, not from a rival theory.
+Between-group differences are a 2.0-fold effect on the ratio (SD-scale);
+within-group scatter is 1.9-fold. The ANOVA finds the group means different (p = 7.2e-07), and 51% of the variance is attributable
+to which paper/condition a pair came from. That is the pattern a
+per-assay [S]/Km would produce; any per-assay systematic difference
+would produce it too, so it does not single out Cheng-Prusoff from a
+rival explanation.
 
-Rejecting the alternative: if the ratio were really a per-compound
-correction rather than a per-assay constant, it would track potency
-within a paper. Fitting log10(ratio) on log10(IC50) per document:
+Does the ratio track potency within a group? Slope of log10(ratio) on
+log10(IC50), with the 95% t-interval; and on log10(Ki). The response
+shares a variable with both regressors, so independent noise biases
+the IC50 slope upward and the Ki slope downward: read the interval and
+the pair of signs, not the point estimate alone.
 
-Per paper (>=5 pairs), with the IC50 range each slope was fitted over:
-  CHEMBL3632554    n=14  slope=-0.025  r=-0.33  1.15e+03-1.55e+06  [enzyme]
-  CHEMBL1136127    n=11  slope=-0.117  r=-0.39      25.8-7.59e+04  [enzyme]
-  CHEMBL1124568    n= 7  slope=+0.602  r=+0.71       1.2-15        [whole-cell]
+  CHEMBL3632554          n=14  slope(IC50)=-0.025 [-0.070,+0.020] p=0.26  slope(Ki)=-0.029 p=0.17  IC50 span 3.1 decades  [enzyme Ki]
+  CHEMBL1136127@30uM     n=11  slope(IC50)=-0.109 [-0.319,+0.101] p=0.27  slope(Ki)=-0.152 p=0.06  IC50 span 3.4 decades  [enzyme Ki]
+  CHEMBL1136127@100uM    n=11  slope(IC50)=-0.121 [-0.330,+0.087] p=0.22  slope(Ki)=-0.159 p=0.05  IC50 span 3.5 decades  [enzyme Ki]
+  CHEMBL1124568          n= 7  slope(IC50)=+0.602 [-0.094,+1.298] p=0.08  slope(Ki)=-0.242 p=0.66  IC50 span 1.1 decades  [antibacterial-described Ki]
 
-2 of 3 papers with >=5 pairs have |slope| < 0.2 while
-spanning 2-3 orders of magnitude of potency: the ratio does not track
-potency, so it is not a per-compound correction. The exception is the
-whole-cell paper (CHEMBL1124568), whose 'Ki' is antibacterial potency
-rather than a binding constant -- pairing it with a purified-enzyme
-IC50 compares two different quantities, which is why the enzyme-only
-column exists.
+4 of 4 groups with >=5 pairs have a slope interval that includes 0; none excludes 0.
+An interval that includes 0 is the absence of a detected trend, not
+evidence of none: groups of 7-14 points have wide intervals, and
+the shortest IC50 span here is 1.1 decades.
 
-Restricting to enzyme-assay Ki records (29 pairs) moves the
-median to 14.74 and the log10 SD to 0.410. Both are reported;
-the cell-based rows are not deleted, because dropping data to improve
-a statistic is how a validation becomes a demonstration.
+Sensitivity analysis: the Ki records whose assay description contains
+'antibacterial' (a keyword match; UNVERIFIED label).
+  7 pairs; their Ki values run 0.4 to 1.7 nM.
+  Trimethoprim (CHEMBL22) Ki by document: CHEMBL1121940 1.3, CHEMBL1123078 1.3, CHEMBL1124156 1.349, CHEMBL1124568 1.3, CHEMBL1124623 1.3, CHEMBL1136127 3.8, CHEMBL3826924 0.22 nM
+  5 of 7 documents (including CHEMBL1124568 itself) record trimethoprim within 5% of the
+  value in the antibacterial-described document, several under enzyme-style descriptions: the wording may be
+  ChEMBL's rather than the measurement's, which this data cannot settle.
+  The rows are not deleted. Excluding them moves the
+  median from 9.38 to 9.99 and the log10 SD from 0.409 to 0.418.
 
 ------------------------------------------------------------------------------
 (d) verdict
 ------------------------------------------------------------------------------
-VERDICT: partially supported
-  - within-paper log10 SD 0.28 (1.9-fold): ratios are reproducible inside a publication
-  - 53% of the log-ratio variance is between papers (2.0-fold from assay conditions), as a per-assay [S]/Km requires
-  - but no assay [S] or [E] is recorded, so the absolute conversion is untested compound by compound: consistency is necessary, not sufficient
+VERDICT (strict join): partially supported
+  - within-paper log10 SD 0.29 (1.9-fold, limit 0.30): ratios are reproducible inside a publication
+  - between-paper difference significant at alpha 0.05: ANOVA F(4,41) = 12.86, p = 7.2e-07; papers account for 51% of the log-ratio variance
+  - no assay [S] or [E] is recorded for most assays, so the absolute conversion is untested compound by compound: consistency is necessary, not sufficient
+verdict (loose join): not testable
+  - no paper contributes enough pairs to measure a within-assay spread, so the ratios cannot be shown to be an assay constant or to differ between assays
+verdict (excl. antibacterial-desc.): partially supported
+  - within-paper log10 SD 0.29 (1.9-fold, limit 0.30): ratios are reproducible inside a publication
+verdict (IC50 pooled over [S]): partially supported
+  - within-paper log10 SD 0.28 (1.9-fold, limit 0.30): ratios are reproducible inside a publication
 
-In plain terms: the ratio is reproducible within a paper and differs
-between papers, which is the structure Cheng-Prusoff requires. That is
-real support for the conversion's *form*. It is not validation of the
-conversion's *values*: the file that would settle those -- one carrying
-[S] alongside IC50 and Ki -- is not in this repository.
+Threshold sensitivity: the pooled within-group log10 SD is 0.288 against the fixed
+limit 0.30; with a limit of 0.25 the strict-join label would be 'unsupported'.
 
-Nor is the support unqualified. 2 pairs fall below the
-model's floor of ratio 1, and the pooled within-paper spread is
-1.9-fold even in the best paper, so the ratio
-is a per-assay constant with real noise on it rather than a tight one.
-Both facts are in the tables above instead of being smoothed away: a
-validation that hides its own residuals is a demonstration.
+What the label means: the ratio is reproducible inside a publication to
+within the stated limit and the groups differ (F-test above); that is the
+structure Cheng-Prusoff requires, and support for the relation's *form*.
+It is not validation of its *values*: for most assays the file that would
+settle those -- one carrying [S] alongside IC50 and Ki -- is not here.
+
+Qualifications from the numbers: 2 pairs fall below the model's floor of ratio 1;
+the pooled within-group SD is 1.9-fold, and per-group max/min ratio spreads run
+from 2.0x to 26.9x (table above), so the ratio is a per-group constant
+with real noise on it rather than a tight one.
 
 What is missing, stated exactly:
-  - assay substrate concentration [S]
+  - assay substrate concentration [S] (stated for only some IC50 assays, in free text)
   - assay enzyme concentration [E]
   - the Km of the assay's substrate under the assay's conditions
 
-With [S] and the assay Km, `pairing.assay_residuals` computes the
+With [S] and the assay Km, pairing.assay_residuals computes the
 predicted ratio and the per-compound log residual directly; that is
-the check this data cannot run and a suitable paper could.
+the check this data cannot run for most assays and a suitable paper
+could.
 
-wrote results/cheng_prusoff_pairs.csv  (88 rows)
+wrote results/cheng_prusoff_pairs.csv  (99 rows)
 wrote results/cheng_prusoff_ratio_stats.csv
+wrote results/cheng_prusoff_two_substrate.csv

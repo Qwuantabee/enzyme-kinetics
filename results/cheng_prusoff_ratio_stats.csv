@@ -1,4 +1,5 @@
-subset,n,median_ratio,q1,q3,iqr,log10_sd,min_ratio,max_ratio,fold_span,median_ci_low,median_ci_high,within_paper_log10_sd,document_explains,implied_S_over_Km_at_median,verdict
-same_document_all,36,7.47165,6.61342,20.5794,13.966,0.407127,0.706438,29.9897,42.4519,6.79131,18.9197,0.283264,0.528211,6.47165,partially supported
-same_molecule_all,52,6.89474,3.99432,20.2525,16.2582,0.534155,0.706438,2110.22,2987.12,6.50274,11.6778,0.534155,nan,5.89474,partially supported
-same_document_enzyme_only,29,14.7429,6.77906,21.0752,14.2961,0.409962,0.706438,29.9897,42.4519,6.85263,20.5,0.28234,0.538619,13.7429,partially supported
+subset,n,median_ratio,q1,q3,iqr,log10_sd,min_ratio,max_ratio,fold_span,median_ci_iid_low,median_ci_iid_high,median_ci_cluster_low,median_ci_cluster_high,within_group_log10_sd,document_explains,anova_F,anova_p,implied_S_over_Km_at_median,verdict
+same_document_all,47,9.375,4.49686,18.9776,14.4807,0.408802,0.478261,29.9897,62.7056,5.07692,11.0526,4.24658,20.5,0.288222,0.513235,12.8618,7.16096e-07,8.375,partially supported
+same_molecule_all,52,6.89474,3.99432,20.2525,16.2582,0.534155,0.706438,2110.22,2987.12,6.50274,11.6778,nan,nan,nan,nan,nan,nan,5.89474,not testable
+same_document_sensitivity_excl_antibacterial_described,40,9.98715,4.74675,20.2525,15.5058,0.418001,0.478261,29.9897,62.7056,5.98912,16.4529,4.63415,20.8194,0.288417,0.535034,15.5755,1.33383e-06,8.98715,partially supported
+same_document_ic50_pooled_over_S,36,7.47165,6.61342,20.5794,13.966,0.407127,0.706438,29.9897,42.4519,6.79131,18.9197,4.11765,20.9501,0.283264,0.528211,13.6887,7.35678e-06,6.47165,partially supported
