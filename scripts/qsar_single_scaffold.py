@@ -161,9 +161,12 @@ def verdict(a, label):
     if r2 <= 0:
         return (
             f"{label}: the signal does NOT survive -- within one scaffold "
-            f"LOO R2 = {r2:.3f} on n = {a['n']}, worse than the mean "
-            f"(p_perm = {p:.3f}); the cross-scaffold signal was chemotype "
-            f"spread, not local chemistry"
+            f"LOO R2 = {r2:.3f} on n = {a['n']}, no better than predicting "
+            f"the mean (p_perm = {p:.3f}). That is the absence of a "
+            f"within-scaffold fit at this n. It is compatible with the "
+            f"cross-scaffold correlation reflecting differences between "
+            f"chemotypes, but a negative R2 cannot establish that: a weak "
+            f"real signal on a small n gives the same number"
         )
     if p < 0.05:
         if par["improvement"] <= 0.02:
