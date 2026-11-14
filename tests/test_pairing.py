@@ -67,11 +67,16 @@ def test_physical_ratio_flag_is_a_floor_at_one():
     assert pairing.implied_substrate_ratio(0.7) == pytest.approx(-0.3)
 
 
-def test_assay_class_separates_whole_cell_from_enzyme():
-    """One ChEMBL document reports whole-cell antibacterial potency as its
-    'Ki'. Mixing that with a purified-enzyme IC50 compares two quantities."""
+def test_assay_class_flags_antibacterial_descriptions_without_asserting_a_fact():
+    """One ChEMBL document DESCRIBES its 'Ki' as whole-cell antibacterial
+    activity. The flag is a keyword match on that description and is
+    unverified (the values look like enzyme Ki), so its name must not claim
+    the record is not an enzyme measurement."""
     assert pairing.assay_class(
-        "Antibacterial activity against Escherichia coli") == "non_enzyme"
+        "Antibacterial activity against Escherichia coli"
+    ) == "antibacterial_described"
+    assert pairing.assay_class("Antibacterial activity against Escherichia coli") \
+        != "non_enzyme"
     assert pairing.assay_class(
         "Inhibition constant against Dihydrofolate reductase") == "enzyme"
     # a generic or empty description stays enzyme: dropping unknowns would
@@ -235,10 +240,10 @@ def test_verdict_calls_an_impossible_median_unsupported():
     assert any("outside the range" in r for r in reasons)
 
 
-def test_verdict_calls_wide_within_paper_scatter_partial():
-    """If one paper's own compounds disagree 100-fold in ratio, there is no
-    per-assay constant and the verdict must not claim one by ignoring the
-    spread."""
+def test_verdict_calls_wide_within_paper_scatter_unsupported():
+    """If one paper's own compounds disagree ~56-fold in ratio, there is no
+    per-assay constant: the label must say 'unsupported', not hedge with
+    'partially supported'."""
     rows = []
     for i in range(8):
         r = 10 ** (i * 0.25)  # 0 to 1.75 decades of ratio spread
@@ -247,7 +252,7 @@ def test_verdict_calls_wide_within_paper_scatter_partial():
                      "assay_description": "Inhibition of DHFR"})
     pairs = pairing.join_ic50_ki_pairs(rows, rows)
     label, reasons = pairing.verdict(pairs)
-    assert label == "partially supported"
+    assert label == "unsupported"
     assert any("exceeds" in r for r in reasons)
 
 
@@ -309,7 +314,15 @@ def test_the_paired_set_exists_and_is_the_size_the_loader_implies(real_pairs):
     strict, loose = real_pairs
     assert len(loose) == 52, "52 compounds appear in both files"
     assert len({p["molecule_chembl_id"] for p in strict}) == 35
-    assert len(strict) == 36, "one compound pairs twice, on two documents"
+    # 36 molecule-document pairs when IC50 records are pooled across assay
+    # conditions; CHEMBL1136127 measured 11 of them at two stated [S] (30 and
+    # 100 uM), which the substrate-aware join keeps apart: 11 pooled pairs
+    # become 22 -> 47.
+    assert len(strict) == 47
+    ic50 = datasets.load_chembl_dhfr_ic50()
+    ki = datasets.load_chembl_dhfr_ki()
+    pooled = pairing.join_ic50_ki_pairs(ic50, ki, split_substrate=False)
+    assert len(pooled) == 36, "one compound pairs twice, on two documents"
 
 
 def test_real_ratio_distribution_matches_the_reported_numbers(real_pairs):
@@ -317,13 +330,27 @@ def test_real_ratio_distribution_matches_the_reported_numbers(real_pairs):
     either loader, the join, or the pooling moves these."""
     strict, loose = real_pairs
     s = pairing.summarize_ratios([p["ratio"] for p in strict])
-    assert s["n"] == 36
-    assert s["median"] == pytest.approx(7.47, abs=0.01)
-    assert s["q1"] == pytest.approx(6.61, abs=0.01)
-    assert s["q3"] == pytest.approx(20.58, abs=0.01)
-    assert s["log10_sd"] == pytest.approx(0.407, abs=0.002)
-    assert s["min"] == pytest.approx(0.706, abs=0.001)
+    # substrate-aware join (IC50 at 30 and 100 uM kept apart)
+    assert s["n"] == 47
+    assert s["median"] == pytest.approx(9.375, abs=0.01)
+    assert s["q1"] == pytest.approx(4.50, abs=0.01)
+    assert s["q3"] == pytest.approx(18.98, abs=0.01)
+    assert s["log10_sd"] == pytest.approx(0.409, abs=0.002)
+    assert s["min"] == pytest.approx(0.478, abs=0.001)
     assert s["max"] == pytest.approx(29.99, abs=0.01)
+
+    # the earlier pooled-over-[S] join, still reproducible on request
+    ic50 = datasets.load_chembl_dhfr_ic50()
+    ki = datasets.load_chembl_dhfr_ki()
+    old = pairing.summarize_ratios([p["ratio"] for p in
+                                    pairing.join_ic50_ki_pairs(
+                                        ic50, ki, split_substrate=False)])
+    assert old["n"] == 36
+    assert old["median"] == pytest.approx(7.47, abs=0.01)
+    assert old["q1"] == pytest.approx(6.61, abs=0.01)
+    assert old["q3"] == pytest.approx(20.58, abs=0.01)
+    assert old["log10_sd"] == pytest.approx(0.407, abs=0.002)
+    assert old["min"] == pytest.approx(0.706, abs=0.001)
 
     sl = pairing.summarize_ratios([p["ratio"] for p in loose])
     assert sl["n"] == 52
@@ -340,12 +367,12 @@ def test_real_within_paper_ratios_are_tighter_than_between(real_pairs):
     per-assay structure Cheng-Prusoff requires."""
     strict, _ = real_pairs
     spread = pairing.within_document_spread(strict)
-    assert spread["pooled_log10_sd"] == pytest.approx(0.283, abs=0.005)
+    assert spread["pooled_log10_sd"] == pytest.approx(0.288, abs=0.005)
     assert 10 ** spread["pooled_log10_sd"] < 2.5, "within-paper spread under 2.5x"
 
     de = pairing.document_effect(strict)
-    assert de["n_groups_used"] == 4
-    assert de["document_explains"] == pytest.approx(0.528, abs=0.01)
+    assert de["n_groups_used"] == 5  # CHEMBL1136127 splits into 30 and 100 uM
+    assert de["document_explains"] == pytest.approx(0.513, abs=0.01)
     assert de["document_explains"] > 0.5, "paper identity explains most variance"
 
 
@@ -358,7 +385,11 @@ def test_real_per_document_medians_are_ordered(real_pairs):
     med = {d: v["median_ratio"] for d, v in spread["per_document"].items()}
     assert med["CHEMBL5233242"] == pytest.approx(3.04, abs=0.05)
     assert med["CHEMBL1124568"] == pytest.approx(4.21, abs=0.05)
-    assert med["CHEMBL1136127"] == pytest.approx(6.79, abs=0.05)
+    # CHEMBL1136127 ran IC50 at two stated [S]; each condition is its own
+    # group (the old single median 6.79 blended them)
+    assert "CHEMBL1136127" not in med
+    assert med["CHEMBL1136127@30uM"] == pytest.approx(4.63, abs=0.05)
+    assert med["CHEMBL1136127@100uM"] == pytest.approx(9.74, abs=0.05)
     assert med["CHEMBL3632554"] == pytest.approx(20.95, abs=0.05)
     implied = {d: pairing.implied_substrate_ratio(v) for d, v in med.items()}
     assert implied["CHEMBL3632554"] == pytest.approx(19.95, abs=0.05)
@@ -388,10 +419,12 @@ def test_real_verdict_is_partial_and_says_why(real_pairs):
     # the missing input must be named rather than gestured at
     assert any("[S]" in r for r in reasons)
 
-    # the loose join, being noisier, must not be reported as better
+    # the loose join pairs across papers, so it has no within-paper
+    # structure to test: it must say so, not borrow the overall SD as a
+    # "within-paper" one
     loose_label, loose_reasons = pairing.verdict(loose)
-    assert loose_label == "partially supported"
-    assert any("exceeds" in r for r in loose_reasons)
+    assert loose_label == "not testable"
+    assert any("no paper" in r for r in loose_reasons)
 
 
 def test_real_pairs_below_the_competitive_floor_are_flagged(real_pairs):
@@ -411,13 +444,22 @@ def test_real_enzyme_subset_is_reported_separately(real_pairs):
     potency. They stay in the data and are labelled, and the enzyme-only
     subset is available for the cleaner comparison."""
     strict, _ = real_pairs
-    non = [p for p in strict if p["ki_assay_class"] == "non_enzyme"]
+    non = [p for p in strict if p["ki_assay_class"] == "antibacterial_described"]
     enzyme = [p for p in strict if p["ki_assay_class"] == "enzyme"]
     assert len(non) == 7
-    assert len(enzyme) == 29
+    assert len(enzyme) == 40
     assert all("antibacterial" in p["ki_assay_description"].lower() for p in non)
     se = pairing.summarize_ratios([p["ratio"] for p in enzyme])
-    assert se["median"] == pytest.approx(14.74, abs=0.01)
+    assert se["median"] == pytest.approx(9.99, abs=0.01)
+    # pooled-over-[S] join: the sensitivity analysis that first moved the
+    # median from 7.47 to 14.74
+    ic50 = datasets.load_chembl_dhfr_ic50()
+    ki = datasets.load_chembl_dhfr_ki()
+    pooled = pairing.join_ic50_ki_pairs(ic50, ki, split_substrate=False)
+    pooled_enz = [p for p in pooled if p["ki_assay_class"] == "enzyme"]
+    assert len(pooled_enz) == 29
+    assert pairing.summarize_ratios(
+        [p["ratio"] for p in pooled_enz])["median"] == pytest.approx(14.74, abs=0.01)
 
 
 def test_pinned_asset_files_exist_and_agree():
@@ -445,5 +487,5 @@ def test_pinned_asset_files_exist_and_agree():
     assert row["verdict"] == "partially supported"
 
     pair_rows = list(csv.DictReader(pairs_path.open()))
-    assert len(pair_rows) == 36 + 52
-    assert len([r for r in pair_rows if r["join_mode"] == "same_document"]) == 36
+    assert len(pair_rows) == 47 + 52
+    assert len([r for r in pair_rows if r["join_mode"] == "same_document"]) == 47

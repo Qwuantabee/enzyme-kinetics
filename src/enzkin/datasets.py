@@ -250,7 +250,18 @@ CHEMBL_DHFR_DIR = (Path(__file__).resolve().parents[2]
                    / "data" / "chembl_dhfr")
 
 
-def load_chembl_dhfr_ic50(data_dir=None):
+#: IC50 values above this many nM (1 mM) are flagged outside_typical_range by
+#: load_chembl_dhfr_ic50. The raw ChEMBL records behind the vendored CSV show
+#: why: all 29 vendored records above 1e6 nM carry no usable unit in the raw
+#: record or ChEMBL's own "Outside typical range" / "Potential transcription
+#: error" validity comment, and 23 of them equal 10**(9 - value) nM for the
+#: raw number, i.e. a unit-less value ChEMBL read as a -log10(M) quantity.
+#: standard_units is "nM" on every record, so a units filter alone cannot
+#: catch them.
+IC50_IMPLAUSIBLE_NM = 1e6
+
+
+def load_chembl_dhfr_ic50(data_dir=None, exclude_implausible=False):
     """Measured IC50 values for E. coli DHFR, as a list of dicts.
 
     Fetched from ChEMBL (target CHEMBL1809, standard_type=IC50,
@@ -272,7 +283,15 @@ def load_chembl_dhfr_ic50(data_dir=None):
     tests/test_cheng_prusoff.py, which checks what is checkable.
 
     Returns dicts with keys: molecule_chembl_id, assay_chembl_id,
-    document_chembl_id, ic50_nM, relation, pchembl.
+    document_chembl_id, ic50_nM, relation, pchembl (None: the vendored CSV
+    has no pchembl column), assay_description, assay_organism and
+    outside_typical_range (value above IC50_IMPLAUSIBLE_NM). The description
+    is kept because it is the only place an assay's [S] is stated, which the
+    IC50/Ki pairing needs.
+
+    Records flagged outside_typical_range are KEPT by default so nothing is
+    dropped silently; pass exclude_implausible=True to remove them, and
+    compare the two counts.
     """
     import csv
 
@@ -295,7 +314,12 @@ def load_chembl_dhfr_ic50(data_dir=None):
             "ic50_nM": value,
             "relation": r.get("relation", "="),
             "pchembl": r.get("pchembl") or None,
+            "assay_description": r.get("assay_description") or "",
+            "assay_organism": r.get("assay_organism") or "",
+            "outside_typical_range": value > IC50_IMPLAUSIBLE_NM,
         })
+    if exclude_implausible:
+        out = [o for o in out if not o["outside_typical_range"]]
     return out
 
 
