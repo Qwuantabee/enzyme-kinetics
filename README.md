@@ -1,12 +1,24 @@
 # enzkin — enzyme kinetics and inhibition analysis
 
-Fitting Michaelis-Menten and inhibition models to initial-rate data, with
-honest uncertainty estimates and mechanism assignment by AICc rather than by
-eye.
+Fitting Michaelis-Menten and inhibition models to initial-rate and progress-curve data, with honest uncertainty and mechanism assignment by AICc rather than by eye. Validated on simulated data with known truth, on one published trace set (Frère 2023) and on ChEMBL *E. coli* DHFR records. Every figure is regenerated from committed data by `python scripts/make_figures.py`.
 
-Milestone 1 (this commit) is the modelling and fitting core, validated against
-simulated data where the true parameters are known. Real published datasets
-come next.
+## At a glance
+
+![Km recovery by method under proportional and absolute error](figures/km_recovery.png)
+
+**Lineweaver-Burk fails only under constant absolute error.** Km SD over 500 simulated experiments: 6086% for Lineweaver-Burk against 18.2% for the nonlinear fit; under proportional error all four methods sit at 6.2–11.1% (Eadie-Hofstee tightest).
+
+![Km of P99 beta-lactamase: initial rates, i.i.d. SE, trace bootstrap](figures/km_uncertainty.png)
+
+**The i.i.d. Km standard error is 12× too small.** Treating 2376 points as independent gives ±0.185 µM; the trace-level bootstrap gives ±2.21 µM, still tighter than initial rates (±5.03 µM). The published 25 µM lies just below the 95% interval (25.74–33.44).
+
+![IC50/Ki ratios per assay condition](figures/cp_ratio_spread.png)
+
+**No single IC50/Ki factor fits.** Same-paper ratios have group medians from 3.0 to 20.9 and within-group max/min spreads of 2.0×–26.9×; the pooled median (9.38) describes none of them. The Cheng-Prusoff form is partially supported; its values are untested.
+
+![QSAR leave-one-out R2 against the Ki cutoff](figures/qsar_tail.png)
+
+**The structure-affinity signal depends on the potency range.** Keeping only Ki < 100 nM, leave-one-out R² is **−0.070** (n = 33) in the 1996 series and **0.556** (n = 25) in the 1988 series, where one descriptor does as well (0.578).
 
 ## Why not just use a Lineweaver-Burk plot
 
@@ -49,8 +61,6 @@ is usually closer to proportional.
 The nonlinear fit is the only method that is never the worst choice, which is
 why it is the default here. `weights="relative"` switches to proportional-error
 weighting when that is what the assay has.
-
-![Km recovery under both error models](figures/km_recovery.png)
 
 ## Confidence intervals
 
@@ -115,6 +125,8 @@ noncompetitive is the Ki = Kis special case of mixed and nests inside it.
 
 ![inhibition fit](figures/inhibition_fit.png)
 
+*One global mixed fit describes all four [I] curves; the other mechanisms lose by ΔAICc ≥ 53.*
+
 ## Worked example
 
 ```
@@ -126,6 +138,14 @@ model: michaelis_menten   n=8   s=2.767   R2=0.9929   AICc=20.38
 ```
 True values were Vmax = 100, Km = 25. Lineweaver-Burk on the same data gave
 Vmax = 95.0, Km = 23.5.
+
+![one titration](figures/mm_fit.png)
+
+*One 8-point titration recovers Km = 25.5 and Vmax = 98.0 (true 25 and 100).*
+
+![linearized views](figures/linearizations.png)
+
+*The same points in the three linear plots: the nonlinear fit is a straight line in each, and Lineweaver-Burk bunches the high-[S] points at the origin.*
 
 Mixed inhibition example, true Ki = 10 and Kis = 40:
 
@@ -390,6 +410,10 @@ Two analyses of the same 18 traces:
 | progress curves, all points | 32.71 ± 0.10 | 29.57 ± 2.21 | 909 | **7.5%** |
 | published literature | — | 25 | 780 | — |
 
+![traces, fits and Km](figures/published_p99.png)
+
+*Progress curves put Km at 29.6 µM, 18% above the published 25 µM; initial rates put it 36% above.*
+
 The progress-curve SE is a **trace-level cluster bootstrap** (400 resamples,
 stratified by [S]₀), not the i.i.d. value the fit returns: 95% CI for Km is
 [25.74, 33.44] µM. The i.i.d. number, 0.19 µM, is not an uncertainty at all.
@@ -441,6 +465,10 @@ values. It also flags the three ways the conversion silently fails:
 | 10 | 11× | a Km 30% too high moves Ki +27%; 30% too low, −28% |
 | 50 | 51× | Km must be measured, not borrowed |
 
+![IC50 to Ki correction and tight-binding records](figures/ic50_conversion.png)
+
+*The correction grows with [S]/Km, and 39% of the IC50 records sit below 10× an assumed 10 nM enzyme, where it does not apply.*
+
 And the tight-binding bound, which is the one that reorders inhibitor series:
 at an assumed 10 nM enzyme, **39% of the 482 IC50 records (187; 35%, or 123 of
 the 353 compounds, by geometric-mean IC50) lie within 10× of [E]**, below
@@ -461,6 +489,10 @@ intervals, the two-substrate check and the verdict rule with its threshold
 sensitivity are in the "Validating the conversion against measured Ki" item
 under "Still to do" above, regenerated from `results_cheng_prusoff.txt`; they
 are not repeated here so that the numbers live in one place.
+
+![two-substrate check](figures/cp_two_substrate.png)
+
+*All 11 compounds of the two-substrate paper sit inside the Cheng-Prusoff window (1.0–3.33), median ratio 2.18; the window is wide and n = 11 has no intervals.*
 
 In short: within an assay condition the ratio is reproducible (pooled
 within-group log10 SD 0.288) and the conditions differ (F(4,41) = 12.86); two
@@ -572,6 +604,10 @@ the series tested are n = 21 (fails), and n = 73 and 72 or their largest-scaffol
 subsets of 66 and 52 (pass the null); nothing between 21 and 52 was tested, and
 the 1996 series loses its fit in the 1–100 nM band at n = 33.
 
+![molecular weight against ten descriptors, whole series and largest scaffold](figures/qsar_mw_scaffold.png)
+
+*Molecular weight carries the 1988 within-scaffold fit: the other descriptors add R² +0.009, against +0.104 to +0.166 in the other three cases.*
+
 Caveats worth stating rather than burying. The 1988 and 1996 papers are
 QSAR-era datasets measured by different groups on different days, and 2D
 descriptors cannot see the pose. CHEMBL1124156 (the 1988 set) contains 9
@@ -591,7 +627,6 @@ was already measured.
 
 Outputs: `results_qsar.txt`, `results/qsar_series.csv`,
 `results_single_scaffold.txt` (the within-scaffold re-run).
-
 
 ## Note on how this was built
 
