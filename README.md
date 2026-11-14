@@ -282,13 +282,15 @@ what is left in those is written down rather than quietly dropped.
   Three papers in `data/chembl_dhfr/ecoli_dhfr_ki.csv` are single-assay
   congeneric sets, and they give two different answers. See below.
 
-- **Open: what the two working series do not establish.** The signal in the
-  72–73 compound sets is real against a permutation null, but it is largely
-  captured by molecular weight alone, and one of the two sets spans nine
-  Murcko scaffolds, so descriptor spread there partly encodes chemotype. What
-  would settle it is a single-scaffold series of ~70+ compounds measured in
-  one assay with [S] and [E] reported, or a free-energy calculation against
-  the actual 4DFR/1DDR poses rather than 2D descriptors. Neither is in the
+- **Open: what the two working series do not establish.** The signal is real
+  against a permutation null and it survives restriction to a single Murcko
+  scaffold (66 of 73 and 52 of 72 compounds, LOO R² 0.312 and 0.653, both
+  p_perm = 0.001), so it is not chemotype spread — see
+  `results_single_scaffold.txt`. But it is largely captured by molecular
+  weight alone. What would settle the mechanism is a free-energy calculation
+  against the actual 4DFR/1DDR poses rather than 2D descriptors, or a series
+  whose congeners differ in a substitution the descriptors can resolve rather
+  than in size. Neither is in the
   data here, and inventing a pose would be worse than the descriptor result.
   The other gap is coverage at the tight end: the 1985 series spans
   0.021–16 nM and so has 12 compounds in the 1–100 nM band, but the two large
@@ -491,13 +493,20 @@ near 70 congeners, not at "impossible".
 Caveats worth stating rather than burying. The 1988 and 1996 papers are
 QSAR-era datasets measured by different groups on different days, and 2D
 descriptors cannot see the pose. CHEMBL1124156 (the 1988 set) contains 9
-Murcko scaffolds, so "congeneric" is generous there — the descriptor spread
-partly reflects chemotype, and that is one way a QSAR looks predictive without
-being mechanistic. The 1996 set is the cleaner test at 66 of 73 on one
-scaffold. Neither result is a prediction about a new compound; both are
-descriptions of variation inside a series that was already measured.
+Murcko scaffolds, so "congeneric" is generous there — but that confound was
+tested and did not explain the result: restricted to its largest
+scaffold (52 of 72 compounds) the LOO R² is 0.653 against 0.624 for the whole
+set, p_perm = 0.001. What that restriction does show is that the fit is
+molecular weight and essentially only molecular weight (MW alone reaches
+0.644, a +0.009 gain for the other nine descriptors), so the honest reading of
+that series is a size penalty inside one chemotype, not a complementarity
+model. The 1996 set is the cleaner test at 66 of 73 on one scaffold, where the
+ten descriptors still add +0.109 over MW alone. Neither result is a prediction
+about a new compound; both are descriptions of variation inside a series that
+was already measured.
 
-Outputs: `results_qsar.txt`, `results/qsar_series.csv`.
+Outputs: `results_qsar.txt`, `results/qsar_series.csv`,
+`results_single_scaffold.txt` (the within-scaffold re-run).
 
 
 ## Note on how this was built
