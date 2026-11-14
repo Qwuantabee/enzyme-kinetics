@@ -126,11 +126,17 @@ def test_a_real_within_scaffold_fit_is_called_a_survival():
     assert "chemotype spread" not in text
 
 
-def test_a_negative_within_scaffold_r2_is_called_chemotype_spread():
+def test_a_negative_within_scaffold_r2_does_not_claim_the_cause():
+    """A negative LOO R2 licenses 'no fit at this n', not 'the cross-scaffold
+    signal was chemotype spread': a weak real signal on a small n gives the
+    same number, so the label must say what it cannot establish."""
     mod = _load_single_scaffold()
     text = mod.verdict(_fake(-0.3, 0.9), "CHEMBL1")
     assert "does NOT survive" in text
-    assert "chemotype spread" in text
+    assert "no better than predicting the mean" in text
+    assert "cannot establish" in text
+    assert "was chemotype spread" not in text
+    assert "not local chemistry" not in text
 
 
 def test_a_positive_r2_that_chance_reaches_is_not_called_a_finding():
@@ -233,8 +239,8 @@ def test_the_committed_report_matches_a_fresh_run():
     """results_single_scaffold.txt must be the output, not a transcription."""
     mod = _load_single_scaffold()
     path = ROOT / "results_single_scaffold.txt"
-    if not path.exists():
-        pytest.skip("figure first: python scripts/qsar_single_scaffold.py")
+    assert path.exists(), \
+        "results_single_scaffold.txt is missing: run scripts/qsar_single_scaffold.py"
     committed = path.read_text().strip()
     _records, fresh = mod.run(n_perm=1000)
     assert committed == fresh.strip()

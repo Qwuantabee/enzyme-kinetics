@@ -32,8 +32,9 @@ PDB_DIR = (__import__("pathlib").Path(__file__).resolve().parents[1]
 
 def _load(pdb_id):
     path = PDB_DIR / f"{pdb_id}.pdb"
-    if not path.exists():
-        pytest.skip(f"{pdb_id}.pdb not present")
+    # the PDB files are tracked in git: a missing one is a broken checkout,
+    # not a reason to skip the structure tests
+    assert path.exists(), f"{pdb_id}.pdb is missing from data/pdb"
     return structure.load_structure(path)
 
 
@@ -239,8 +240,11 @@ def test_link_builds_a_complete_record():
     """Join the wild-type methotrexate Ki to the MTX site in 1DDR."""
     wt = [r for r in datasets.load_chembl_dhfr_ki()
           if r["molecule_chembl_id"] == "CHEMBL34259"]
-    if not wt:
-        pytest.skip("no wild-type MTX Ki record")
+    # A mutant-filter regression (or a changed Ki file) must FAIL here, not
+    # skip: the wild-type record set for methotrexate is what the join needs.
+    assert wt, ("no wild-type MTX Ki record: the mutant filter now removes "
+                "every methotrexate record, or the Ki file changed")
+    assert {r["molecule_chembl_id"] for r in wt} == {"CHEMBL34259"}
     s = _load("1DDR")
     nmr = {"chembl_molecule_id": "CHEMBL34259", "ki_nM": min(r["ki_nM"] for r in wt),
            "assay_chembl_id": wt[0]["assay_chembl_id"]}
