@@ -1,0 +1,47 @@
+Single-scaffold (chemotype-controlled) QSAR test
+============================================================
+
+Same descriptors, same leave-one-out folds, same permutation null,
+restricted to the largest Murcko scaffold of each series. If the
+cross-series signal is chemotype spread, it vanishes here.
+
+--- CHEMBL1129627: J Med Chem 1996, doi:10.1021/jm960197z
+all compounds fitted: n = 73, scaffolds = 6
+largest scaffold: C1=NC=NCC1Cc1ccccc1
+scaffold size: 66/73 compounds
+
+Between-scaffold share of each descriptor's variance (eta-squared):
+  Rings             1.000
+  AromaticRings     1.000
+  FractionCSP3      0.149
+  MolRefract        0.131
+  logP              0.115
+
+SUBSET n = 66 (constant descriptors: Rings, AromaticRings)
+Ki span in subset: 1.349 to 912011 nM (676064x)
+LOO R2 = 0.312; best single descriptor MW gives 0.203 (gain +0.109)
+Permutation null (1000 shuffles, seed 0): mean = -0.191, 95th pct = -0.042, max = 0.105
+p_perm = 0.001
+
+VERDICT: CHEMBL1129627: the signal survives -- within one scaffold LOO R2 = 0.312 on n = 66, p_perm = 0.001; best single descriptor MW reaches 0.203 (gain +0.109)
+
+--- CHEMBL1124156: J Med Chem 1988, doi:10.1021/jm00402a025
+all compounds fitted: n = 72, scaffolds = 9
+largest scaffold: c1ccc(Cc2cncnc2)cc1
+scaffold size: 52/72 compounds
+
+Between-scaffold share of each descriptor's variance (eta-squared):
+  Rings             1.000
+  AromaticRings     1.000
+  RotB              0.221
+  FractionCSP3      0.196
+  MolRefract        0.172
+
+SUBSET n = 52 (constant descriptors: Rings, AromaticRings)
+Ki span in subset: 0.01202 to 912011 nM (75874459x)
+LOO R2 = 0.653; best single descriptor MW gives 0.644 (gain +0.009)
+Permutation null (1000 shuffles, seed 0): mean = -0.263, 95th pct = -0.034, max = 0.254
+p_perm = 0.001
+
+VERDICT: CHEMBL1124156: the signal survives -- within one scaffold LOO R2 = 0.653 on n = 52, p_perm = 0.001; note that MW alone reaches 0.644, so the within-scaffold fit is a size effect and the other nine descriptors add nothing
+
