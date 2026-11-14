@@ -205,7 +205,7 @@ scripts/
     validate_cheng_prusoff.py  the conversion tested against measured Ki
     fetch_chembl_smiles.py canonical SMILES for the Ki compounds (cached)
     qsar_congeneric.py     2D descriptors vs Ki, with a permutation null
-tests/             240 tests: limiting cases on the rate laws, parameter
+tests/             261 tests: limiting cases on the rate laws, parameter
                    recovery, CI coverage, mechanism identification,
                    progress-curve recovery, Cheng-Prusoff limits and
                    round trips, IC50/Ki pairing on the real ChEMBL tables,
