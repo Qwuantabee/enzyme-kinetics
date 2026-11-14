@@ -1,0 +1,89 @@
+join_mode,molecule_chembl_id,document_chembl_id,ic50_nM,ki_nM,ic50_over_ki,implied_S_over_Km,physical,n_ic50_records,n_ki_records,ki_assay_class,ki_assay_description
+same_document,CHEMBL82985,CHEMBL1136127,16248.1,23000,0.706438,-0.293562,False,2,1,enzyme,Inhibition constant against Dihydrofolate reductase
+same_document,CHEMBL1162149,CHEMBL5233242,32300,35860,0.900725,-0.099275,False,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as inhibition constant
+same_document,CHEMBL59416,CHEMBL1124568,1.2,0.8,1.5,0.5,True,1,1,non_enzyme,Antibacterial activity against Escherichia coli
+same_document,CHEMBL43065,CHEMBL5233242,95700,31480,3.04003,2.04003,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as inhibition constant
+same_document,CHEMBL23338,CHEMBL1124568,3.2,0.9,3.55556,2.55556,True,1,1,non_enzyme,Antibacterial activity against Escherichia coli
+same_document,CHEMBL23746,CHEMBL1124568,7,1.7,4.11765,3.11765,True,1,1,non_enzyme,Antibacterial activity against Escherichia coli DHFR
+same_document,CHEMBL22,CHEMBL1124568,5.47723,1.3,4.21325,3.21325,True,2,1,non_enzyme,Antibacterial activity against Escherichia coli
+same_document,CHEMBL213969,CHEMBL1137355,75,11.5,6.52174,5.52174,True,1,1,enzyme,Inhibition of Escherichia coli DHFR
+same_document,CHEMBL84108,CHEMBL1136127,852.056,130,6.55428,5.55428,True,2,1,enzyme,Inhibition constant against Dihydrofolate reductase
+same_document,CHEMBL309713,CHEMBL1136127,13266.5,2000,6.63325,5.63325,True,2,1,enzyme,Inhibition constant against Dihydrofolate reductase
+same_document,CHEMBL310759,CHEMBL1136127,505.47,75.3193,6.71102,5.71102,True,4,2,enzyme,Inhibition constant against Dihydrofolate reductase
+same_document,CHEMBL82825,CHEMBL1136127,1288.02,190,6.77906,5.77906,True,2,1,enzyme,Inhibition constant against Dihydrofolate reductase
+same_document,CHEMBL22,CHEMBL1136127,25.807,3.8,6.79131,5.79131,True,2,1,enzyme,Inhibition constant against Dihydrofolate reductase
+same_document,CHEMBL85364,CHEMBL1136127,445.421,65,6.85263,5.85263,True,2,1,enzyme,Inhibition constant against Dihydrofolate reductase
+same_document,CHEMBL82334,CHEMBL1136127,282.489,41,6.88997,5.88997,True,2,1,enzyme,Inhibition constant against Dihydrofolate reductase
+same_document,CHEMBL80014,CHEMBL1136127,75894.7,11000,6.89951,5.89951,True,2,1,enzyme,Inhibition constant against Dihydrofolate reductase
+same_document,CHEMBL83547,CHEMBL1136127,504.183,73,6.90661,5.90661,True,2,1,enzyme,Inhibition constant of compound against dihydrofolate reductase
+same_document,CHEMBL1160541,CHEMBL1136127,181.433,26,6.9782,5.9782,True,2,1,enzyme,Inhibition constant against Dihydrofolate reductase
+same_document,CHEMBL23609,CHEMBL1124568,4,0.5,8,7,True,1,1,non_enzyme,Antibacterial activity against Escherichia coli
+same_document,CHEMBL278345,CHEMBL1124568,3.7,0.4,9.25,8.25,True,1,1,non_enzyme,Antibacterial activity against Escherichia coli
+same_document,CHEMBL58550,CHEMBL1124568,15,1.6,9.375,8.375,True,1,1,non_enzyme,Antibacterial activity against Escherichia coli DHFR
+same_document,CHEMBL1412044,CHEMBL3632554,1.548e+06,105000,14.7429,13.7429,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as NADP formation by quadratic Morrison plot analysis
+same_document,CHEMBL3634634,CHEMBL3632554,721600,39300,18.3613,17.3613,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as NADP formation by quadratic Morrison plot analysis
+same_document,CHEMBL316611,CHEMBL3632554,62830,3320.88,18.9197,17.9197,True,1,2,enzyme,Competitive inhibition of Escherichia coli DHFR by Lineweaver-Burk plot analysis in presence of H2F
+same_document,CHEMBL97567,CHEMBL3632554,1840,96.661,19.0356,18.0356,True,1,2,enzyme,Competitive inhibition of Escherichia coli DHFR by Lineweaver-Burk plot analysis in presence of H2F
+same_document,CHEMBL94742,CHEMBL3632554,7590,376.289,20.1707,19.1707,True,1,2,enzyme,Competitive inhibition of Escherichia coli DHFR by Lineweaver-Burk plot analysis in presence of H2F
+same_document,CHEMBL747,CHEMBL3632554,20910,1020,20.5,19.5,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as NADP formation by quadratic Morrison plot analysis
+same_document,CHEMBL548155,CHEMBL3632554,32270,1550,20.8194,19.8194,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as NADP formation by quadratic Morrison plot analysis
+same_document,CHEMBL268914,CHEMBL3632554,20190,958,21.0752,20.0752,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as NADP formation by quadratic Morrison plot analysis
+same_document,CHEMBL266573,CHEMBL3632554,89100,4020,22.1642,21.1642,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as NADP formation by quadratic Morrison plot analysis
+same_document,CHEMBL741,CHEMBL3632554,348900,15240,22.8937,21.8937,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as NADP formation by quadratic Morrison plot analysis
+same_document,CHEMBL333873,CHEMBL3632554,262700,11160,23.5394,22.5394,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as NADP formation by quadratic Morrison plot analysis
+same_document,CHEMBL1625056,CHEMBL3632554,478400,20220,23.6597,22.6597,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as NADP formation by quadratic Morrison plot analysis
+same_document,CHEMBL1724189,CHEMBL5233242,189,7.8,24.2308,23.2308,True,1,1,enzyme,Inhibition of Escherichia coli DHFR assessed as inhibition constant
+same_document,CHEMBL97313,CHEMBL3632554,1150,45.9592,25.0222,24.0222,True,1,2,enzyme,Competitive inhibition of Escherichia coli DHFR by Lineweaver-Burk plot analysis in presence of H2F
+same_document,CHEMBL1617293,CHEMBL3632554,18450,615.212,29.9897,28.9897,True,1,2,enzyme,Competitive inhibition of Escherichia coli DHFR by Lineweaver-Burk plot analysis in presence of H2F
+same_molecule,CHEMBL82985,,16248.1,23000,0.706438,-0.293562,False,2,1,enzyme,
+same_molecule,CHEMBL1162149,,32300,35860,0.900725,-0.099275,False,1,1,enzyme,
+same_molecule,CHEMBL59416,,1.2,0.8,1.5,0.5,True,1,1,enzyme,
+same_molecule,CHEMBL283279,,1.65959e+06,912011,1.8197,0.819704,True,1,1,enzyme,
+same_molecule,CHEMBL31619,,1479.11,489.78,3.01995,2.01995,True,1,1,enzyme,
+same_molecule,CHEMBL43065,,95700,31480,3.04003,2.04003,True,1,1,enzyme,
+same_molecule,CHEMBL417095,,724.44,223.87,3.23599,2.23599,True,1,1,enzyme,
+same_molecule,CHEMBL19023,,500,151.36,3.30338,2.30338,True,1,1,enzyme,
+same_molecule,CHEMBL19293,,501.19,151.36,3.31124,2.31124,True,1,1,enzyme,
+same_molecule,CHEMBL18967,,398.11,117.49,3.38846,2.38846,True,1,1,enzyme,
+same_molecule,CHEMBL19633,,67.679,19.05,3.5527,2.5527,True,3,1,enzyme,
+same_molecule,CHEMBL23338,,3.2,0.9,3.55556,2.55556,True,1,1,enzyme,
+same_molecule,CHEMBL265493,,2570.39,660.69,3.89047,2.89047,True,2,1,enzyme,
+same_molecule,CHEMBL32039,,18,4.467,4.02955,3.02955,True,1,1,enzyme,
+same_molecule,CHEMBL23746,,7,1.7,4.11765,3.11765,True,2,1,enzyme,
+same_molecule,CHEMBL31891,,2.951,0.6026,4.89711,3.89711,True,1,1,enzyme,
+same_molecule,CHEMBL322001,,17,2.7,6.2963,5.2963,True,1,1,enzyme,
+same_molecule,CHEMBL318078,,62,9.8,6.32653,5.32653,True,1,1,enzyme,
+same_molecule,CHEMBL105006,,20,3.1,6.45161,5.45161,True,1,1,enzyme,
+same_molecule,CHEMBL213969,,75,11.5,6.52174,5.52174,True,1,1,enzyme,
+same_molecule,CHEMBL84108,,852.056,130,6.55428,5.55428,True,2,1,enzyme,
+same_molecule,CHEMBL309713,,13266.5,2000,6.63325,5.63325,True,2,1,enzyme,
+same_molecule,CHEMBL310759,,505.47,75.3193,6.71102,5.71102,True,4,2,enzyme,
+same_molecule,CHEMBL82825,,1288.02,190,6.77906,5.77906,True,2,1,enzyme,
+same_molecule,CHEMBL85364,,445.421,65,6.85263,5.85263,True,2,1,enzyme,
+same_molecule,CHEMBL82334,,282.489,41,6.88997,5.88997,True,2,1,enzyme,
+same_molecule,CHEMBL80014,,75894.7,11000,6.89951,5.89951,True,2,1,enzyme,
+same_molecule,CHEMBL83547,,504.183,73,6.90661,5.90661,True,2,1,enzyme,
+same_molecule,CHEMBL1160541,,181.433,26,6.9782,5.9782,True,2,1,enzyme,
+same_molecule,CHEMBL287241,,31.5544,4.169,7.56882,6.56882,True,2,1,enzyme,
+same_molecule,CHEMBL23609,,4,0.5,8,7,True,1,1,enzyme,
+same_molecule,CHEMBL278345,,3.7,0.4,9.25,8.25,True,1,1,enzyme,
+same_molecule,CHEMBL58550,,15,1.6,9.375,8.375,True,1,1,enzyme,
+same_molecule,CHEMBL1412044,,1.548e+06,105000,14.7429,13.7429,True,1,1,enzyme,
+same_molecule,CHEMBL3634634,,721600,39300,18.3613,17.3613,True,1,1,enzyme,
+same_molecule,CHEMBL316611,,62830,3320.88,18.9197,17.9197,True,1,2,enzyme,
+same_molecule,CHEMBL97567,,1840,96.661,19.0356,18.0356,True,1,2,enzyme,
+same_molecule,CHEMBL104675,,320,16,20,19,True,1,1,enzyme,
+same_molecule,CHEMBL94742,,7590,376.289,20.1707,19.1707,True,1,2,enzyme,
+same_molecule,CHEMBL747,,20910,1020,20.5,19.5,True,1,1,enzyme,
+same_molecule,CHEMBL548155,,32270,1550,20.8194,19.8194,True,1,1,enzyme,
+same_molecule,CHEMBL266573,,89100,4020,22.1642,21.1642,True,1,1,enzyme,
+same_molecule,CHEMBL741,,348900,15240,22.8937,21.8937,True,1,1,enzyme,
+same_molecule,CHEMBL333873,,262700,11160,23.5394,22.5394,True,1,1,enzyme,
+same_molecule,CHEMBL1625056,,478400,20220,23.6597,22.6597,True,1,1,enzyme,
+same_molecule,CHEMBL1724189,,189,7.8,24.2308,23.2308,True,1,1,enzyme,
+same_molecule,CHEMBL97313,,1150,45.9592,25.0222,24.0222,True,1,2,enzyme,
+same_molecule,CHEMBL22,,31.3475,1.18187,26.5236,25.5236,True,27,7,enzyme,
+same_molecule,CHEMBL268914,,20190,703.27,28.7087,27.7087,True,1,3,enzyme,
+same_molecule,CHEMBL1617293,,18450,615.212,29.9897,28.9897,True,1,2,enzyme,
+same_molecule,CHEMBL36,,3633.18,53.0886,68.4362,67.4362,True,2,2,enzyme,
+same_molecule,CHEMBL34259,,9.67024,0.00458258,2110.22,2109.22,True,19,2,enzyme,

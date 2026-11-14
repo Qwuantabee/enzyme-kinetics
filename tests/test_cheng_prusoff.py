@@ -11,7 +11,7 @@ Three layers:
    and check the original Ki comes out. That tests the relation against the
    rate equations rather than against my own algebra.
 
-3. Behaviour on a real dataset. 483 measured IC50s for E. coli dihydrofolate
+3. Behaviour on a real dataset. 482 measured IC50s for E. coli dihydrofolate
    reductase from ChEMBL, used to check the conversion is numerically sane over
    the range real assays actually produce (sub-nM to mM) and that the
    assumption checks fire where they should.
