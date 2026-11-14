@@ -6,10 +6,10 @@ ChEMBL Ki records      266 total, 257 wild-type (9 mutant records excluded)
 --- the mutant problem, on the record ---
 methotrexate Ki, all records : [0.001, 0.021, 330.0, 2400.0, 170000.0] nM
 methotrexate Ki, wild type   : [0.001, 0.021] nM
-Pooling these would claim a 5-order-of-magnitude uncertainty on one
-compound. The spread is not noise: three records are point mutants at
-residue 31 (Phe/Tyr/Val), which the loader filters on the assay
-description.
+Pooling these would claim a 8.23-order-of-magnitude spread on one
+compound (6.38 orders if the largest record is left out). The spread is not noise:
+3 records are filtered by the mutant keyword match on the assay description
+(the description names Phe/Tyr/Val at residue 31).
 
 --- structures analysed ---
 1DDR: MOLECULE: DIHYDROFOLATE REDUCTASE (E.C.1.5.1.3) COMPLEXED WITH
@@ -100,7 +100,20 @@ The last is the one that bites in practice. 4DFR contains both an
 E. coli and a Lactobacillus casei copy; analysing the wrong chain
 would compare an E. coli Ki to a L. casei pocket and look fine.
 
-6 Ki/structure pairs joined.
+6 Ki/structure pairs joined: 1 compound x 2 distinct Ki records x 3 structures.
+They are NOT independent observations: the same compound and the same
+two Ki values are laid against three coordinate sets of one protein.
+
+Counting rule for 'contacts' above: each count is a number of
+(protein atom, ligand atom) PAIRS under a distance cutoff (hbond: N/O
+<= 3.5 A; salt_bridge: protein N/O of ARG/LYS/HIS to ligand O, or
+ASP/GLU N/O to ligand N, <= 4.0 A, backbone atoms included; no angle or
+charge check). They are not counts of distinct interactions.
+
+Per structure (from the lines above, not pooled):
+  1DDR/MTX: 18 site residues, burial 91%, contacts {'hbond': 14, 'hydrophobic': 25, 'salt_bridge': 9, 'aromatic': 65}
+  3DAU/MTX: 21 site residues, burial 100%, contacts {'hbond': 12, 'hydrophobic': 26, 'salt_bridge': 11, 'aromatic': 73}
+  4DFR/MTX: 18 site residues, burial 97%, contacts {'hbond': 13, 'hydrophobic': 21, 'salt_bridge': 11, 'aromatic': 55}
 
 --- within-compound spread of the measured Ki ---
 CHEMBL34259: [0.001, 0.021] nM  (21x spread across wild-type assays)

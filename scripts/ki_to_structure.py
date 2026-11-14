@@ -32,7 +32,7 @@ OUT = ROOT / "results_structure.txt"
 #: check itself is in the note printed below the table.
 LIGAND_TO_CHEMBL = {
     "MTX": "CHEMBL34259",   # methotrexate
-    "FOL": "CHEMBL1622",    # folate (dihydrofolate reductase substrate)
+    "FOL": "CHEMBL1622",    # folic acid (not the natural substrate, dihydrofolate)
     "NAP": "CHEMBL121334",  # NADP+
     "NDP": "CHEMBL1235856",  # NADPH
 }
@@ -61,10 +61,15 @@ def main():
                     if r["molecule_chembl_id"] == "CHEMBL34259")
     out(f"methotrexate Ki, all records : {mtx_all} nM")
     out(f"methotrexate Ki, wild type   : {mtx_wt} nM")
-    out("Pooling these would claim a 5-order-of-magnitude uncertainty on one")
-    out("compound. The spread is not noise: three records are point mutants at")
-    out("residue 31 (Phe/Tyr/Val), which the loader filters on the assay")
-    out("description.")
+    import math
+    span_all = math.log10(max(mtx_all) / min(mtx_all))
+    span_wo_top = math.log10(sorted(mtx_all)[-2] / min(mtx_all))
+    out(f"Pooling these would claim a {span_all:.2f}-order-of-magnitude spread on one")
+    out(f"compound ({span_wo_top:.2f} orders if the largest record is left out). The "
+        f"spread is not noise:")
+    out(f"{len(mtx_all) - len(mtx_wt)} records are filtered by the mutant keyword "
+        f"match on the assay description")
+    out("(the description names Phe/Tyr/Val at residue 31).")
 
     # --- structures ------------------------------------------------------
     out("\n--- structures analysed ---")
@@ -145,7 +150,27 @@ def main():
     out("would compare an E. coli Ki to a L. casei pocket and look fine.")
 
     if joined:
-        out(f"\n{len(joined)} Ki/structure pairs joined.")
+        n_cmp = len({k.chembl_molecule_id for k in joined})
+        n_ki = len({(k.chembl_molecule_id, k.assay_chembl_id, k.ki_nM) for k in joined})
+        n_struct = len({k.pdb_id for k in joined})
+        out(f"\n{len(joined)} Ki/structure pairs joined: {n_cmp} compound x "
+            f"{n_ki} distinct Ki records x {n_struct} structures.")
+        out("They are NOT independent observations: the same compound and the same")
+        out("two Ki values are laid against three coordinate sets of one protein.")
+        out("\nCounting rule for 'contacts' above: each count is a number of")
+        out("(protein atom, ligand atom) PAIRS under a distance cutoff (hbond: N/O")
+        out("<= 3.5 A; salt_bridge: protein N/O of ARG/LYS/HIS to ligand O, or")
+        out("ASP/GLU N/O to ligand N, <= 4.0 A, backbone atoms included; no angle or")
+        out("charge check). They are not counts of distinct interactions.")
+        out("\nPer structure (from the lines above, not pooled):")
+        seen = set()
+        for k in joined:
+            key = (k.pdb_id, k.ligand_code)
+            if key in seen:
+                continue
+            seen.add(key)
+            out(f"  {k.pdb_id}/{k.ligand_code}: {k.n_site_residues} site residues, "
+                f"burial {k.burial_fraction:.0%}, contacts {k.contacts}")
         by_compound = {}
         for link in joined:
             by_compound.setdefault(link.chembl_molecule_id, []).append(link.ki_nM)

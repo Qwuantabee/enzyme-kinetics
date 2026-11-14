@@ -171,8 +171,9 @@ class Structure:
         """Fraction of the ligand's atoms in van der Waals contact with protein.
 
         Each ligand atom is counted as buried if any protein atom is within
-        `cutoff`, which defaults to 4.5 A -- about the sum of two carbon van
-        der Waals radii plus a little slack. This is a crude proxy for buried
+        `cutoff`, which defaults to 4.5 A. For scale: two carbon van der Waals
+        radii sum to about 3.4 A, so 4.5 A is a contact shell about 1.1 A wider
+        than touching, not a van der Waals contact in the strict sense. This is a crude proxy for buried
         surface area, not a Shrake-Rupley calculation (which needs explicit
         radii and a probe sphere), but it is computed from coordinates rather
         than assumed and it separates a buried ligand from a surface one.
@@ -211,7 +212,17 @@ class Structure:
         Hydrogen bonds, hydrophobic contacts, salt bridges, aromatic stacking
         -- each is a set of geometric criteria, and each is an approximation.
         What is returned is the *counts* under stated rules, not a claim about
-        which interactions actually contribute to binding energy. The rules:
+        which interactions actually contribute to binding energy.
+
+        COUNTING RULE: every count is a number of (protein atom, ligand atom)
+        PAIRS closer than the cutoff, so one ligand atom near three protein
+        atoms adds three. A count of 14 "hbond" is 14 atom pairs within 3.5 A,
+        not 14 distinct hydrogen bonds. No angle, donor/acceptor assignment,
+        protonation state or formal charge on the ligand is checked, and the
+        salt-bridge rule uses residue identity only: ANY protein N or O of an
+        ARG/LYS/HIS residue (backbone atoms included) within 4.0 A of a ligand
+        O counts, and ANY ASP/GLU N/O within 4.0 A of a ligand N counts. The
+        rules:
 
           hbond        N/O of protein within 3.5 A of N/O of ligand
           hydrophobic  C of protein within 4.0 A of C of ligand
