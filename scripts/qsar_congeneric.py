@@ -144,7 +144,10 @@ def analyse(document_id, n_perm=1000, seed=0, ki_rows=None, smiles=None):
         "truncation": qsar.truncation_sensitivity(
             X, y, s["ki_nM"], n_perm=min(200, n_perm), seed=seed),
         "scaffolds": scaffold_counts(s["rows"]),
-        "pearson_in_sample": float(np.corrcoef(y, loo)[0, 1]),
+        # correlation of the observed y with its LEAVE-ONE-OUT prediction: each
+        # prediction comes from a model that never saw that row, so this is
+        # not an in-sample correlation (the old key name said it was)
+        "pearson_obs_vs_loo": float(np.corrcoef(y, loo)[0, 1]),
     }
 
 
@@ -246,7 +249,7 @@ def format_report(results, lines_out=None):
             f"gives {par['full_r2']:.3f} (gain {par['improvement']:+.3f})")
         add("")
         add(f"Multivariable model, leave-one-out: R2 = {a['loocv_r2']:.3f}, "
-            f"corr(observed, LOO-predicted) = {a['pearson_in_sample']:.3f}")
+            f"corr(observed, LOO-predicted) = {a['pearson_obs_vs_loo']:.3f}")
         nl = a["null"]
         add(f"Permutation null ({nl['n_perm']} shuffles, seed {nl['seed']}): "
             f"mean R2 = {nl['null_mean']:.3f}, "
@@ -292,12 +295,24 @@ def write_predictions(results, path):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--series", nargs="+", default=["CHEMBL1123078"],
-                    help="document_chembl_id(s) to analyse")
+    ap.add_argument("--series", nargs="+", default=list(SERIES_LABELS),
+                    help="document_chembl_id(s) to analyse; the default is "
+                         "every series in SERIES_LABELS, which is what the "
+                         "committed results_qsar.txt holds")
     ap.add_argument("--n-perm", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default=str(ROOT / "results_qsar.txt"))
+    ap.add_argument("--out", default=None,
+                    help="report path; default results_qsar.txt for the full "
+                         "series set, results/qsar_adhoc_<ids>.txt for any "
+                         "other set, so a partial rerun cannot overwrite the "
+                         "committed artefact")
     args = ap.parse_args(argv)
+    full = list(args.series) == list(SERIES_LABELS)
+    if args.out is None:
+        args.out = str(ROOT / "results_qsar.txt" if full else
+                       ROOT / "results" / ("qsar_adhoc_" + "_".join(args.series) + ".txt"))
+    csv_path = (ROOT / "results" / "qsar_series.csv" if full else
+                ROOT / "results" / ("qsar_adhoc_" + "_".join(args.series) + ".csv"))
 
     ki_rows = load_chembl_dhfr_ki()
     smiles = read_smiles()
@@ -306,7 +321,7 @@ def main(argv=None):
                for d in args.series]
     report = format_report(results)
     Path(args.out).write_text(report + "\n")
-    write_predictions(results, ROOT / "results" / "qsar_series.csv")
+    write_predictions(results, csv_path)
     print(report)
     return 0
 

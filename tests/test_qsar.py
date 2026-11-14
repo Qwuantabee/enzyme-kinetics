@@ -364,9 +364,19 @@ QSAR_REPORT = ROOT / "results_qsar.txt"
 
 
 def _univariate_rho(report_text, descriptor, series_index):
-    """Pull one descriptor's rho out of a series block in results_qsar.txt."""
+    """Pull one descriptor's rho out of a series block in results_qsar.txt.
+
+    series_index is a document_chembl_id (preferred: the block order changes
+    whenever a series is added or a partial run rewrites the file) or an
+    integer block position.
+    """
     blocks = report_text.split("--- ")[1:]
-    block = blocks[series_index]
+    if isinstance(series_index, str):
+        matches = [b for b in blocks if b.startswith(series_index)]
+        assert matches, f"{series_index} has no block in results_qsar.txt"
+        block = matches[0]
+    else:
+        block = blocks[series_index]
     for line in block.splitlines():
         parts = line.split()
         if parts and parts[0] == descriptor and len(parts) >= 4:
@@ -383,7 +393,7 @@ def test_molecular_weight_rho_is_negative_against_log10_ki():
     the prose, or in the analysis, cannot pass unnoticed.
     """
     text = QSAR_REPORT.read_text()
-    for series_index in (0, 1):
+    for series_index in ("CHEMBL1129627", "CHEMBL1124156"):
         rho = _univariate_rho(text, "MW", series_index)
         assert rho < 0, f"rho(MW) = {rho} in series block {series_index}"
 
@@ -392,8 +402,8 @@ def test_molecular_weight_rho_is_negative_against_log10_ki():
 def test_the_most_negative_descriptors_are_not_uniform_and_hbd_is_the_exception():
     """The 'every case' claim in the README was false: HBD is positive."""
     text = QSAR_REPORT.read_text()
-    rho_mw = _univariate_rho(text, "MW", 0)
-    rho_hbd = _univariate_rho(text, "HBD", 0)
+    rho_mw = _univariate_rho(text, "MW", "CHEMBL1129627")
+    rho_hbd = _univariate_rho(text, "HBD", "CHEMBL1129627")
     assert rho_mw < 0 < rho_hbd
 
 
