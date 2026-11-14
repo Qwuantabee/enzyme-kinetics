@@ -27,14 +27,19 @@ What that means in practice, and why the assumptions have to be stated:
 
 1. **The mechanism must already be known.** Cheng-Prusoff is not a way to
    discover mechanism, it is a way to convert a number once you know it. Using
-   the competitive form on an uncompetitive inhibitor biases Ki in the wrong
-   direction by roughly (1+[S]/Km)(1+Km/[S]) -- at [S] = Km that is a factor
-   of 4.
+   the competitive form on an uncompetitive inhibitor returns
+   Ki_estimated / Ki_true = (1+Km/[S]) / (1+[S]/Km) = Km/[S] exactly: Ki is
+   10x too high at [S]/Km = 0.1, correct at [S] = Km (both factors are 2,
+   so there is NO bias there), and 10x too low at [S]/Km = 10. The reverse
+   mistake (uncompetitive form on a competitive inhibitor) is wrong by
+   [S]/Km.
 
 2. **[S] and Km must be the assay's, not a literature value.** Ki computed
    with the wrong Km is wrong by the ratio of the two correction factors. A
-   competitive conversion at [S]=10*Km is a factor-of-11 correction, so a Km
-   that is off by 30% moves Ki by about 25%.
+   competitive conversion at [S] = 10*Km has factor 11. A Km 30% too high
+   gives factor 1 + 10/1.3 = 8.69, so the computed Ki is 11/8.69 = 1.27x the
+   true one (+27%); a Km 30% too low gives factor 15.3 and a computed Ki
+   0.72x the true one (-28%).
 
 3. **[S] must be the free concentration, and close to what you added.** If the
    assay consumes a large fraction of substrate -- which is exactly what the
@@ -44,8 +49,12 @@ What that means in practice, and why the assumptions have to be stated:
 
 4. **The inhibitor must not deplete.** Ki is a dissociation constant; IC50 in
    a tight-binding assay reflects [E] as much as affinity. Cheng-Prusoff
-   assumes [I] >> [E]. When IC50 approaches the enzyme concentration, the
-   apparent IC50 is a stoichiometric titration and the conversion is invalid.
+   assumes [I] >> [E]. For a competitive inhibitor the Morrison relation is
+   IC50 = Ki (1 + [S]/Km) + [E]/2, so the plain conversion returns
+   Ki + [E] / (2 (1 + [S]/Km)): it OVERestimates Ki, by [E]/(2 f). Example:
+   Ki = 1, [S]/Km = 1, [E] = 10 gives IC50 = 7 and a Cheng-Prusoff Ki of 3.5.
+   When IC50 approaches the enzyme concentration the apparent IC50 is
+   partly a stoichiometric titration and the conversion is invalid.
 
 5. **Steady state, no slow-binding, no substrate inhibition.**
 
@@ -267,10 +276,13 @@ def check_assumptions(ic50, s_conc, km, model="competitive",
     warnings = []
 
     if f > 10:
+        # a Km 30% too high lowers f, which RAISES the computed Ki
+        up = f / correction_factor(s_conc, km * 1.3, model) - 1.0
         warnings.append(
             f"correction factor is {f:.1f}x: [S]/Km = {s_over_km:.1f} means "
-            f"a 30% error in Km moves Ki by about 25%. Measure Km in the "
-            f"same buffer and at the same temperature as the IC50."
+            f"a 30% error in Km (30% too high) moves the computed Ki by "
+            f"{up:+.0%}. Measure Km in the same buffer and at the same "
+            f"temperature as the IC50."
         )
 
     if enzyme_conc is not None:
@@ -279,8 +291,9 @@ def check_assumptions(ic50, s_conc, km, model="competitive",
             warnings.append(
                 f"IC50 is only {ic50 / enzyme_conc:.1f}x the enzyme "
                 f"concentration: this is tight binding, so the IC50 is partly "
-                f"a titration of the enzyme and Cheng-Prusoff (which assumes "
-                f"[I] >> [E]) underestimates Ki. Use a Morrison equation fit."
+                f"a titration of the enzyme (IC50 = Ki*f + [E]/2 for a "
+                f"competitive inhibitor) and Cheng-Prusoff (which assumes "
+                f"[I] >> [E]) OVERestimates Ki. Use a Morrison equation fit."
             )
 
     if total_conversion is not None and total_conversion > 0.10:
