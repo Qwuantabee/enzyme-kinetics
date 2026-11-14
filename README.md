@@ -50,7 +50,7 @@ The nonlinear fit is the only method that is never the worst choice, which is
 why it is the default here. `weights="relative"` switches to proportional-error
 weighting when that is what the assay has.
 
-![Km recovery under absolute error](figures/km_recovery_absolute.png)
+![Km recovery under both error models](figures/km_recovery.png)
 
 ## Confidence intervals
 
