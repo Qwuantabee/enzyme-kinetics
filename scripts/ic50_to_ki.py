@@ -16,9 +16,6 @@ enough to matter rather than hypothetical.
 import sys
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,8 +24,6 @@ sys.path.insert(0, str(ROOT / "src"))
 from enzkin import cheng_prusoff as cp  # noqa: E402
 from enzkin import datasets  # noqa: E402
 
-FIG = ROOT / "figures"
-FIG.mkdir(exist_ok=True)
 OUT = ROOT / "results_ic50.txt"
 
 
@@ -98,36 +93,6 @@ def main():
     out("measurement. To validate the conversion against measured Ki you need")
     out("a paper reporting both for the same compound under stated conditions.")
     out("That is the open item in README.md.")
-
-    # --- figure -----------------------------------------------------------
-    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.0))
-
-    ax = axes[0]
-    ratios = np.logspace(-1, 2, 200)
-    ax.plot(ratios, [cp.correction_factor(r, 1.0, "competitive")
-                     for r in ratios], lw=2, label="competitive")
-    ax.plot(ratios, [cp.correction_factor(r, 1.0, "uncompetitive")
-                     for r in ratios], lw=2, label="uncompetitive")
-    ax.axhline(1.0, ls=":", color="grey", lw=1, label="noncompetitive")
-    ax.axvline(1.0, ls="--", color="k", lw=0.8, alpha=0.4)
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlabel("[S] / Km")
-    ax.set_ylabel("IC50 / Ki")
-    ax.set_title("correction factor: the size of the conversion", fontsize=9)
-    ax.legend(fontsize=7)
-    ax.tick_params(labelsize=8)
-
-    ax = axes[1]
-    ax.hist(np.log10(ics), bins=40, color="C0", alpha=0.8)
-    ax.set_xlabel("log10 IC50 (nM)")
-    ax.set_ylabel("compounds")
-    ax.set_title(f"E. coli DHFR IC50 series (n={len(ics)})", fontsize=9)
-    ax.tick_params(labelsize=8)
-
-    fig.tight_layout()
-    fig.savefig(FIG / "ic50_conversion.png", dpi=150)
-    out(f"\nfigure -> {FIG / 'ic50_conversion.png'}")
 
     OUT.write_text("\n".join(lines) + "\n")
     print(f"summary -> {OUT}")

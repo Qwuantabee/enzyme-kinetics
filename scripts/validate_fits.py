@@ -3,23 +3,18 @@ is the double reciprocal plot?
 
 Run:  python scripts/validate_fits.py
 
-Writes figures to figures/ and prints the numbers quoted in the README.
+Prints the numbers quoted in the README. It draws nothing: every file in
+figures/ is written by scripts/make_figures.py, the only figure generator.
 """
 
 import sys
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from enzkin import fitting, linearize, plotting, simulate  # noqa: E402
-
-FIG = Path(__file__).resolve().parent.parent / "figures"
-FIG.mkdir(exist_ok=True)
+from enzkin import fitting, linearize, simulate  # noqa: E402
 
 N_TRIALS = 500
 TRUE_VMAX, TRUE_KM = 100.0, 25.0
@@ -72,12 +67,6 @@ def recovery_study(noise_type="relative"):
 
     print(f"\n95% CI coverage for Km (nonlinear): {100*covered/N_TRIALS:.1f}% "
           f"(nominal 95%)")
-
-    fig = plotting.plot_recovery(errs["nonlinear"]["km"],
-                                 errs["lineweaver_burk"]["km"],
-                                 errs["hanes_woolf"]["km"])
-    fig.savefig(FIG / f"km_recovery_{noise_type}.png", dpi=150)
-    plt.close(fig)
     return errs
 
 
@@ -125,8 +114,8 @@ def mechanism_study():
             print(f"{mech:<16} {noise:>5.0%} {100*hits/trials:>16.0f}%")
 
 
-def example_figures():
-    """One worked example of each figure, for the README."""
+def worked_examples():
+    """The worked examples quoted in the README (drawn by make_figures.py)."""
     S, v, truth = simulate.substrate_series(vmax=TRUE_VMAX, km=TRUE_KM,
                                             noise=NOISE, n=8, seed=42)
     fit = fitting.fit_michaelis_menten(S, v)
@@ -142,16 +131,6 @@ def example_figures():
     for k, (lo, hi) in boot.items():
         print(f"  bootstrap 95% CI {k}: [{lo:.4g}, {hi:.4g}]")
 
-    fig, ax = plt.subplots(figsize=(5.5, 4))
-    plotting.plot_fit(S, v, fit, ax=ax)
-    fig.tight_layout()
-    fig.savefig(FIG / "mm_fit.png", dpi=150)
-    plt.close(fig)
-
-    fig = plotting.plot_linearizations(S, v, fit)
-    fig.savefig(FIG / "linearizations.png", dpi=150)
-    plt.close(fig)
-
     S, I, v, truth = simulate.inhibition_grid(mechanism="mixed", ki=10.0,
                                               kis=40.0, noise=0.03, seed=3)
     results = fitting.compare_models(S, I, v)
@@ -162,17 +141,11 @@ def example_figures():
               f"dAICc={r.aicc - best_aicc:6.2f}")
     print(results[0].summary())
 
-    fig, ax = plt.subplots(figsize=(6, 4.2))
-    plotting.plot_inhibition(S, I, v, results[0], ax=ax)
-    fig.tight_layout()
-    fig.savefig(FIG / "inhibition_fit.png", dpi=150)
-    plt.close(fig)
-
 
 if __name__ == "__main__":
     recovery_study("relative")
     recovery_study("absolute")
     design_study()
     mechanism_study()
-    example_figures()
-    print(f"\nfigures written to {FIG}")
+    worked_examples()
+    print("\nfigures: python scripts/make_figures.py")

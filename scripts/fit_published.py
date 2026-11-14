@@ -2,8 +2,9 @@
 
     python scripts/fit_published.py
 
-Writes figures/published_p99.png, prints the numbers quoted in README.md, and
-appends a machine-readable summary to results_published.txt.
+Prints the numbers quoted in README.md and appends a machine-readable summary
+to results_published.txt. It draws nothing: figures/published_p99.png and
+figures/km_uncertainty.png are written by scripts/make_figures.py.
 
 Data: Frere, Verlaine & Matagne (2023) Sci Rep 13:14994,
 doi:10.1038/s41598-023-41805-y; archive doi:10.5281/zenodo.10059024, CC-BY.
@@ -32,9 +33,6 @@ uncertainty at all.
 import sys
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -42,8 +40,6 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from enzkin import datasets, fitting, progress  # noqa: E402
 
-FIG = ROOT / "figures"
-FIG.mkdir(exist_ok=True)
 OUT = ROOT / "results_published.txt"
 
 WINDOWS = (0.05, 0.10, 0.15, 0.25, 0.40)
@@ -155,45 +151,6 @@ def main():
     out("initial-rate window covers a large fraction of S0 and depletes it.")
     out("That is exactly the regime where the paper argues progress curves")
     out("are better, and the Km standard errors above are the test of it.")
-
-    # --- figure ---------------------------------------------------------
-    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.2))
-
-    ax = axes[0]
-    for stem in datasets.SUBSTRATE_UM:
-        t, p, s0 = datasets.progress_curve(stem)
-        ax.plot(t, p, lw=0.8, alpha=0.55,
-                color="C0" if s0 < 40 else ("C1" if s0 < 60 else "C3"))
-    tt = np.linspace(0, 1.15, 400)
-    for s0, c in ((11.1, "C0"), (35.0, "C1"), (64.0, "C3")):
-        ax.plot(tt, progress.product_from_time(tt, prog.vmax, prog.km, s0),
-                lw=2.0, color=c,
-                label=f"[S]0 = {s0:.0f} uM fit")
-    ax.set_xlabel("time (min)")
-    ax.set_ylabel("product (uM)")
-    ax.set_title(f"global progress-curve fit\nVmax={prog.vmax:.1f} uM/min, "
-                 f"Km={prog.km:.1f} uM", fontsize=9)
-    ax.legend(fontsize=7)
-    ax.tick_params(labelsize=8)
-
-    ax = axes[1]
-    ax.errorbar(S, v, yerr=[r["v_sem"] for r in table], fmt="o", ms=5,
-                capsize=3, color="C0", label="initial rates (15%)")
-    ss = np.linspace(0, S.max() * 1.15, 300)
-    ax.plot(ss, rate_fit.params["vmax"] * ss / (rate_fit.params["km"] + ss),
-            lw=1.6, color="C0",
-            label=f"MM fit: Km={rate_fit.params['km']:.1f}")
-    ax.plot(ss, prog.vmax * ss / (prog.km + ss), lw=1.6, ls="--", color="C2",
-            label=f"progress: Km={prog.km:.1f}")
-    ax.set_xlabel("[S]0 (uM)")
-    ax.set_ylabel("v (uM/min)")
-    ax.set_title("initial-rate fit vs progress-curve fit", fontsize=9)
-    ax.legend(fontsize=7)
-    ax.tick_params(labelsize=8)
-
-    fig.tight_layout()
-    fig.savefig(FIG / "published_p99.png", dpi=150)
-    out(f"\nfigure -> {FIG / 'published_p99.png'}")
 
     OUT.write_text("\n".join(lines) + "\n")
     print(f"summary -> {OUT}")
