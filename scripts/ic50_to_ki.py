@@ -2,7 +2,7 @@
 
     python scripts/ic50_to_ki.py
 
-Answers a question the dataset can actually support: given 483 measured IC50s
+Answers a question the dataset can actually support: given 482 measured IC50s
 for E. coli dihydrofolate reductase, what does the conversion do to them, and
 where does it stop being valid?
 

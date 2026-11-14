@@ -1,0 +1,152 @@
+==============================================================================
+Cheng-Prusoff vs measured Ki: E. coli dihydrofolate reductase
+==============================================================================
+target        ChEMBL CHEMBL1809
+IC50 records  482
+Ki records    266 total, 257 wild-type (9 point-mutant records excluded by the load_chembl_dhfr_ki mutant filter)
+compounds in both files        52
+  ... sharing a publication    35 (36 molecule-document pairs)
+  ... paired on molecule only  52
+
+------------------------------------------------------------------------------
+(a) observed IC50/Ki ratio distribution
+------------------------------------------------------------------------------
+Ratios are formed per (molecule, document) after geometric-mean pooling of
+replicate measurements, because IC50 and Ki are log-scale quantities.
+
+set                          n   median      Q1      Q3  log10SD           range
+same publication (strict)   36     7.47    6.61   20.58    0.407   0.71-30.0    
+same molecule (loose)       52     6.89    3.99   20.25    0.534   0.71-2110.2  
+strict, enzyme assays only  29    14.74    6.78   21.08    0.410   0.71-30.0    
+
+Median ratio for the defensible pairs: 7.47 (95% bootstrap CI 6.79 to 18.92),
+IQR 6.61 to 20.58, n = 36.
+2 of 36 pairs sit below 1, which the competitive model
+forbids (CHEMBL82985 0.71, CHEMBL1162149 0.90). Those are not evidence
+against the conversion -- they are evidence that a few paired records
+are not what their labels claim. They stay in the headline number.
+The full span is 42.5-fold, which sounds alarming and is
+the wrong number to quote: the ratio is not one number across papers,
+and section (c) shows why.
+
+Per publication:
+document           n  median ratio   within-paper spread  implied [S]/Km
+CHEMBL3632554     14         20.95                2.03x         19.9
+CHEMBL1136127     11          6.79                9.88x          5.8
+CHEMBL1124568      7          4.21                6.25x          3.2
+CHEMBL5233242      3          3.04               26.90x          2.0
+
+------------------------------------------------------------------------------
+(b) what Cheng-Prusoff implies, and what assumption reconciles it
+------------------------------------------------------------------------------
+For a competitive inhibitor, IC50 = Ki (1 + [S]/Km). Inverting the
+observed ratio gives the assay's substrate factor directly:
+
+  observed ratio    implied [S]/Km
+            1.00              0.00
+            2.00              1.00
+            7.47              6.47
+           21.00             20.00
+           30.00             29.00
+
+Quoting one implied [S]/Km for the whole set would be misleading, and
+section (a) is the reason. The pooled median of 7.5 is an average
+over papers whose own median ratios run from 3.0 to 20.9,
+i.e. implied [S]/Km from about 2.0 to 20.
+Quoted per paper the factor is a concrete number of the size
+inhibition assays of this enzyme plausibly use; quoted across the
+whole set it is an average of incompatible things and means little.
+
+A single global [S]/Km CANNOT reconcile this data, and that is worth
+stating plainly: with one factor, every paper's median ratio would
+have to be the same number. They are not. What reconciles the data is
+a per-assay factor -- which is exactly what Cheng-Prusoff says the
+ratio is. So the median is reported because it summarises the set, not
+because it is the conversion factor.
+
+The assumptions that make that per-assay reading consistent: every
+pair is a competitive inhibitor; each paper ran a single [S]; and each
+IC50 is a true 50% inhibition point rather than a fitted midpoint off a
+partial curve. Relax any of them and the ratio stops being an assay
+constant.
+
+The assumption is NOT independently checkable here. Nothing in these
+files constrains [S], so no pair can confirm or refute the correction it
+implies. That is the ceiling of this test.
+
+------------------------------------------------------------------------------
+(c) assay conditions vs genuinely different compounds
+------------------------------------------------------------------------------
+Same-publication pairs are the tighter comparison: one lab, one
+protocol family, one enzyme preparation, and typically one substrate
+concentration. Same-molecule pairs that span publications mix all of
+those, so their scatter has more in it than assay variation alone.
+
+log10(ratio) variance decomposition, strict pairs (>=3 pairs/paper):
+  total   0.1701
+  between 0.0898  (52.8% of total)
+  within  0.0802  (47.2%)
+  4 papers, 35 pairs
+
+Between-paper differences are a 2.0-fold effect on the ratio;
+within-paper scatter is 1.9-fold. So roughly half the total
+variance in the ratio is 'which paper this came from', i.e. assay
+conditions, not 'which compound this is'. That is the pattern
+Cheng-Prusoff predicts. It is also what any per-assay systematic
+difference would produce, so it discriminates the conversion from
+noise, not from a rival theory.
+
+Rejecting the alternative: if the ratio were really a per-compound
+correction rather than a per-assay constant, it would track potency
+within a paper. Fitting log10(ratio) on log10(IC50) per document:
+
+Per paper (>=5 pairs), with the IC50 range each slope was fitted over:
+  CHEMBL3632554    n=14  slope=-0.025  r=-0.33  1.15e+03-1.55e+06  [enzyme]
+  CHEMBL1136127    n=11  slope=-0.117  r=-0.39      25.8-7.59e+04  [enzyme]
+  CHEMBL1124568    n= 7  slope=+0.602  r=+0.71       1.2-15        [whole-cell]
+
+2 of 3 papers with >=5 pairs have |slope| < 0.2 while
+spanning 2-3 orders of magnitude of potency: the ratio does not track
+potency, so it is not a per-compound correction. The exception is the
+whole-cell paper (CHEMBL1124568), whose 'Ki' is antibacterial potency
+rather than a binding constant -- pairing it with a purified-enzyme
+IC50 compares two different quantities, which is why the enzyme-only
+column exists.
+
+Restricting to enzyme-assay Ki records (29 pairs) moves the
+median to 14.74 and the log10 SD to 0.410. Both are reported;
+the cell-based rows are not deleted, because dropping data to improve
+a statistic is how a validation becomes a demonstration.
+
+------------------------------------------------------------------------------
+(d) verdict
+------------------------------------------------------------------------------
+VERDICT: partially supported
+  - within-paper log10 SD 0.28 (1.9-fold): ratios are reproducible inside a publication
+  - 53% of the log-ratio variance is between papers (2.0-fold from assay conditions), as a per-assay [S]/Km requires
+  - but no assay [S] or [E] is recorded, so the absolute conversion is untested compound by compound: consistency is necessary, not sufficient
+
+In plain terms: the ratio is reproducible within a paper and differs
+between papers, which is the structure Cheng-Prusoff requires. That is
+real support for the conversion's *form*. It is not validation of the
+conversion's *values*: the file that would settle those -- one carrying
+[S] alongside IC50 and Ki -- is not in this repository.
+
+Nor is the support unqualified. 2 pairs fall below the
+model's floor of ratio 1, and the pooled within-paper spread is
+1.9-fold even in the best paper, so the ratio
+is a per-assay constant with real noise on it rather than a tight one.
+Both facts are in the tables above instead of being smoothed away: a
+validation that hides its own residuals is a demonstration.
+
+What is missing, stated exactly:
+  - assay substrate concentration [S]
+  - assay enzyme concentration [E]
+  - the Km of the assay's substrate under the assay's conditions
+
+With [S] and the assay Km, `pairing.assay_residuals` computes the
+predicted ratio and the per-compound log residual directly; that is
+the check this data cannot run and a suitable paper could.
+
+wrote results/cheng_prusoff_pairs.csv  (88 rows)
+wrote results/cheng_prusoff_ratio_stats.csv

@@ -163,6 +163,8 @@ src/enzkin/
     progress.py    integrated rate equation, Lambert W forward model
     linearize.py   the three classic transforms, for comparison
     cheng_prusoff.py  IC50 <-> Ki, 4PL dose-response fitting, assumption checks
+    pairing.py     joins measured IC50 to measured Ki, tests the ratio
+                   Cheng-Prusoff predicts against the ratio observed
     structure.py   PDB parsing, binding-site and contact geometry
     datasets.py    the published traces (Frere 2023) and the ChEMBL tables
     simulate.py    synthetic data with known parameters
@@ -173,10 +175,12 @@ scripts/
     fit_published.py       initial rates vs progress curves on real data
     fetch_chembl_dhfr.py   pull the IC50/Ki tables with assay descriptions
     ic50_to_ki.py          Cheng-Prusoff applied to the real IC50 series
-tests/             95 tests: limiting cases on the rate laws, parameter
+    validate_cheng_prusoff.py  the conversion tested against measured Ki
+tests/             120 tests: limiting cases on the rate laws, parameter
                    recovery, CI coverage, mechanism identification,
                    progress-curve recovery, Cheng-Prusoff limits and
-                   round trips, PDB geometry on real structures
+                   round trips, IC50/Ki pairing on the real ChEMBL tables,
+                   PDB geometry on real structures
 ```
 
 ## Setup
@@ -190,9 +194,10 @@ python -m venv .venv
 
 ## Still to do
 
-Updated after the published-data pass. Two of the four original items are
-done; two are done as far as the available data honestly allows, and what is
-left is written down rather than quietly dropped.
+Updated after the published-data pass and the IC50/Ki validation. All four
+original items are done. Two of them are done only as far as the available
+data honestly allows, and what is left in those is written down rather than
+quietly dropped.
 
 - ~~Fit published datasets rather than only simulated ones~~ — **done.**
   Eighteen experimental traces of *Enterobacter cloacae* P99 class C
@@ -207,15 +212,49 @@ left is written down rather than quietly dropped.
   standard error 25× smaller than the initial-rate fit. See below.
 
 - ~~IC50 to Ki conversion via Cheng-Prusoff, with the assumptions made
-  explicit~~ — **done**, with one caveat that is not a code problem. The
-  relations, the assumption checks and a 4PL IC50 fitter are in
-  `cheng_prusoff.py`, tested against a real 483-value ChEMBL series. **Open:
-  validating the conversion against measured Ki.** ChEMBL's activity records
-  for the target carry no assay [S] and no assay [E], which are exactly the
-  inputs Cheng-Prusoff needs, so the converted values are illustrations of
-  the arithmetic rather than measurements. Doing this properly needs a paper
-  that reports IC50 and Ki for the same compounds under stated conditions;
-  that is a literature search, not a coding task.
+  explicit~~ — **done**, and the caveat that stood here is now measured
+  rather than asserted. The relations, the assumption checks and a 4PL IC50
+  fitter are in `cheng_prusoff.py`.
+
+- ~~Validating the conversion against measured Ki~~ — **done, and the answer
+  is that it is partially supported, not validated.** This item used to say
+  the check was impossible because ChEMBL records carry no assay [S] or [E].
+  That is true and still true, but it was too pessimistic about what *can* be
+  tested. The two files in this repository overlap: of 482 IC50 records and
+  266 Ki records, **52 compounds appear in both**, and for **35 of them the
+  IC50 and the Ki come from the same publication** (36 molecule-document
+  pairs). `scripts/validate_cheng_prusoff.py` joins them and tests the ratio
+  the theory predicts, because Cheng-Prusoff for a competitive inhibitor says
+  IC50/Ki = 1 + [S]/Km — a property of the assay, not of the compound.
+
+  Measured, from `results/cheng_prusoff_ratio_stats.csv`:
+
+  | set | n | median IC50/Ki | IQR | log10 SD |
+  |---|---|---|---|---|
+  | same publication (strict) | 36 | 7.47 | 6.61–20.58 | 0.407 |
+  | same molecule only (loose) | 52 | 6.89 | 3.99–20.25 | 0.534 |
+  | strict, enzyme assays only | 29 | 14.74 | 6.78–21.08 | 0.410 |
+
+  The median ratio of 7.5 implies the typical assay ran at [S] ≈ 6× Km — but
+  that pooled number averages papers whose own medians are 3.0, 4.2, 6.8 and
+  20.9, so it is a summary and not a conversion factor. What the data does
+  support is the *structure*: within each paper the ratio is reproducible to
+  **1.9-fold** (pooled within-paper log10 SD 0.283) while the papers differ
+  from each other by more — **53% of the log-ratio variance is between
+  papers**, which is what a per-assay substrate factor predicts. The largest
+  paper (CHEMBL3632554, 14 compounds spanning 1150 to 1.55×10⁶ nM of potency)
+  has a ratio-vs-potency slope of **−0.025**: the ratio does not track
+  potency, so it is not a per-compound correction.
+
+  What it does not support is the *values*. No record carries [S], so no pair
+  can confirm the correction it implies; any ratio above 1 is consistent with
+  some substrate concentration. Two pairs sit below the competitive model's
+  floor of ratio 1 (CHEMBL82985 at 0.71, CHEMBL1162149 at 0.90) and are
+  flagged rather than dropped. Seven further pairs pair a purified-enzyme
+  IC50 with a whole-cell "antibacterial" Ki — a different quantity — and are
+  labelled `non_enzyme` and reported separately, not deleted. Validation of
+  the absolute conversion still needs a paper carrying [S] alongside IC50 and
+  Ki; `pairing.assay_residuals` is the function that would run that check.
 
 - ~~Link Ki values to binding-site structure from the PDB~~ — **done**, and
   deliberately limited. Measured Ki values are joined to crystal structures
@@ -275,7 +314,7 @@ is not the literature preparation.
 
 ## IC50 to Ki
 
-`scripts/ic50_to_ki.py` on 483 measured IC50 values for *E. coli* DHFR from
+`scripts/ic50_to_ki.py` on 482 measured IC50 values for *E. coli* DHFR from
 ChEMBL (target CHEMBL1809, 354 compounds, 42 papers).
 
 The module refuses the mixed case outright: one IC50 cannot yield two Ki
@@ -291,6 +330,48 @@ values. It also flags the three ways the conversion silently fails:
 And the tight-binding bound, which is the one that reorders inhibitor series:
 at an assumed 10 nM enzyme, **39% of this real compound series has an IC50
 within 10× of [E]** and cannot be converted by Cheng-Prusoff at all.
+
+### Is the conversion right? Measured against real Ki values
+
+`scripts/validate_cheng_prusoff.py` answers the question the paragraph above
+used to defer, and the answer is **partially supported**. 52 compounds appear
+in both the IC50 and the Ki tables; for 35 of them (36 molecule-document
+pairs) the two measurements come from the *same publication*, which holds the
+lab and the protocol constant.
+
+| set | n | median IC50/Ki | IQR | log10 SD |
+|---|---|---|---|---|
+| same publication (strict) | 36 | 7.47 | 6.61–20.58 | 0.407 |
+| same molecule only (loose) | 52 | 6.89 | 3.99–20.25 | 0.534 |
+| strict, enzyme assays only | 29 | 14.74 | 6.78–21.08 | 0.410 |
+
+What supports the relation:
+
+* **Within a paper the ratio is stable.** Pooled within-paper log10 SD is
+  0.283, a 1.9-fold spread. The 14 compounds of CHEMBL3632554 span 1150 to
+  1.55×10⁶ nM in potency at a ratio of 20.95 with a ratio-vs-potency slope of
+  −0.025. The correction is not tracking potency.
+* **Between papers it moves, and that is the prediction.** 53% of the
+  log-ratio variance is between papers. Per-paper median ratios are 3.0
+  (CHEMBL5233242), 4.2 (CHEMBL1124568), 6.8 (CHEMBL1136127) and 20.9
+  (CHEMBL3632554) — four assays, four implied [S]/Km values of about 2, 3, 6
+  and 20.
+
+What it does not establish, and why the verdict stops at "partially":
+
+* **No record carries [S].** Every ratio above 1 is consistent with some
+  substrate concentration, so internal consistency is necessary and not
+  sufficient. The absolute conversion is still untested compound by compound.
+* **Two pairs sit below the competitive floor** of ratio 1 (CHEMBL82985 at
+  0.71, CHEMBL1162149 at 0.90). The model forbids that; the rows are flagged,
+  not dropped.
+* **Seven pairs are not enzyme assays at all.** One paper reports whole-cell
+  antibacterial potency as its "Ki". They are labelled `non_enzyme` and
+  reported separately rather than deleted, because deleting them would
+  improve the median and destroy the result's meaning.
+
+Feeding [S] and the assay Km to `pairing.assay_residuals` is the check that
+would settle it, and it needs a paper that reports both.
 
 ## Ki to binding site
 

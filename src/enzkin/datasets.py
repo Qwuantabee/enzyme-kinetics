@@ -255,7 +255,7 @@ def load_chembl_dhfr_ic50(data_dir=None):
 
     Fetched from ChEMBL (target CHEMBL1809, standard_type=IC50,
     standard_relation='=') and vendored to
-    data/chembl_dhfr/ecoli_dhfr_ic50.csv. 483 records over 354 compounds and
+    data/chembl_dhfr/ecoli_dhfr_ic50.csv. 482 records over 353 compounds and
     42 publications -- a real inhibitor series, not a simulation.
 
     Why this dataset: it is what an IC50-to-Ki conversion actually operates
