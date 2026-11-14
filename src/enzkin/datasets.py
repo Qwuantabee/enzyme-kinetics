@@ -18,7 +18,7 @@ The system is the Enterobacter cloacae P99 class C beta-lactamase hydrolysing
 nitrocefin, followed spectrophotometrically at 462 nm. That dataset is a good
 fit for this package because it is a genuine [S] series with five substrate
 concentrations, several replicate traces at each, and -- importantly -- the
-reaction is followed to 40-64% substrate conversion, so the same traces can
+reaction is followed to 36-65% substrate conversion (measured over all 18 traces: 35.6% to 64.7%), so the same traces can
 be analysed either as initial rates or as full progress curves. The paper's
 whole argument is that the second is not worse than the first, and having the
 raw traces means that claim can be checked here rather than taken on trust.

@@ -35,7 +35,7 @@ def test_parses_instrument_thousands_dot_format():
     assert t[-1] < 5.0, "time axis was not parsed correctly"
     assert np.all(np.diff(t) > 0), "time must increase"
     assert np.allclose(np.diff(t), 1 / 120.0, rtol=1e-3), \
-        "the instrument sampled at 120 Hz = 0.008333 min"
+        "the instrument sampled every 1/120 min (0.008333 min, i.e. 2 Hz)"
 
 
 def test_loaded_trace_shapes_and_ranges():
@@ -81,7 +81,8 @@ def test_initial_rate_depends_on_the_window_chosen():
 def test_fit_to_published_data_lands_near_the_published_values():
     """The paper quotes kcat = 780 s^-1 and Km = 25 uM for this system.
 
-    Tolerances are wide (factor 2 on both). A real preparation is not the
+    Tolerances are wide: Km within 0.5-2.5x and kcat within 0.4-3.0x of the
+    published values. A real preparation is not the
     literature preparation -- see test_activation_fraction_is_reported. What
     would be alarming is an order-of-magnitude disagreement, and that is what
     this catches: e.g. a units error anywhere in the absorbance conversion.
