@@ -1,0 +1,42 @@
+Tail sensitivity of the QSAR signal (leave-one-out R2)
+============================================================
+
+Compounds are dropped from the weak end (Ki >= cutoff) and the same
+ten-descriptor LOO fit and permutation null are rerun. Cutoffs are
+fixed in advance and all are shown.
+
+--- CHEMBL1129627 (J Med Chem 1996, doi:10.1021/jm960197z) -- whole series, n = 73
+Ki bands: below_1nM 0, 1_to_100nM 33, 100nM_to_100uM 39, 100uM_and_above 1
+ cutoff (nM)  kept  dropped   LOO R2  best single   p_perm
+        none    73        0    0.326        0.222         
+      100000    72        1    0.582        0.244    0.001
+       10000    72        1    0.582        0.244    0.001
+        1000    71        2    0.588        0.276    0.001
+         100    33       40   -0.070        0.036    0.039
+
+--- CHEMBL1129627 (J Med Chem 1996, doi:10.1021/jm960197z) -- largest scaffold, n = 66
+Ki bands: below_1nM 0, 1_to_100nM 29, 100nM_to_100uM 36, 100uM_and_above 1
+ cutoff (nM)  kept  dropped   LOO R2  best single   p_perm
+        none    66        0    0.312        0.203         
+      100000    65        1    0.576        0.224    0.001
+       10000    65        1    0.576        0.224    0.001
+        1000    64        2    0.583        0.258    0.001
+         100    29       37   -0.143        0.022    0.073
+
+--- CHEMBL1124156 (J Med Chem 1988, doi:10.1021/jm00402a025) -- whole series, n = 72
+Ki bands: below_1nM 12, 1_to_100nM 13, 100nM_to_100uM 45, 100uM_and_above 2
+ cutoff (nM)  kept  dropped   LOO R2  best single   p_perm
+        none    72        0    0.624        0.458         
+      100000    70        2    0.736        0.532    0.001
+       10000    68        4    0.706        0.529    0.001
+        1000    58       14    0.773        0.630    0.001
+         100    25       47    0.556        0.578    0.001
+
+--- CHEMBL1124156 (J Med Chem 1988, doi:10.1021/jm00402a025) -- largest scaffold, n = 52
+Ki bands: below_1nM 11, 1_to_100nM 10, 100nM_to_100uM 30, 100uM_and_above 1
+ cutoff (nM)  kept  dropped   LOO R2  best single   p_perm
+        none    52        0    0.653        0.644         
+      100000    51        1    0.815        0.680    0.001
+       10000    51        1    0.815        0.680    0.001
+        1000    50        2    0.828        0.720    0.001
+         100    21       31    0.873        0.642    0.001
