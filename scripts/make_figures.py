@@ -420,9 +420,13 @@ def fig_qsar_tail():
             ax.plot(x, [rows[c]["single"] for c in CUTOFFS], "--s", color=colour, lw=1.2,
                     ms=4.5, alpha=0.75, markeredgecolor="black", markeredgewidth=0.4,
                     zorder=2)
+            # Masked: the offset put these digits on the series' own line, so
+            # "0.873" and "0.556" were struck through by the curve they label.
             ax.annotate(_fmt(rows[100.0]["r2"], 3), (x[-1], rows[100.0]["r2"]),
-                        xytext=(-9, 0), textcoords="offset points", ha="right", va="center",
-                        fontsize=FS_NOTE + 0.5, fontweight="bold", color=colour)
+                        xytext=(-10, 0), textcoords="offset points", ha="right", va="center",
+                        fontsize=FS_NOTE + 0.5, fontweight="bold", color=colour,
+                        bbox=dict(facecolor="white", edgecolor="none", pad=0.8),
+                        zorder=6)
         n96 = [sweep[(SERIES[0][0], subset)][c]["n"] for c in CUTOFFS]
         n88 = [sweep[(SERIES[1][0], subset)][c]["n"] for c in CUTOFFS]
         ax.set_xticks(x)
@@ -450,10 +454,12 @@ def fig_qsar_tail():
     # so "survives" without that clause reads as a win for the descriptor model
     # when the tail sweep actually says the opposite. Both numbers are in the
     # title now.
-    fig.suptitle("At the drug-relevant 100 nM cutoff, whole series: the 1996 QSAR "
-                 f"fit collapses (LOO R\u00b2 {_fmt(r96, 3)}), and the 1988 signal "
-                 f"survives ({r88:.3f})\nbut slightly BELOW one descriptor there "
-                 f"({b88:.3f}) - the ten descriptors add nothing at that cutoff",
+    # Three short lines instead of two long ones: the two-line version was wider
+    # than the canvas and clipped at both ends, which cut off the numbers that are
+    # the entire point of the panel.
+    fig.suptitle("At the 100 nM cutoff, whole series\n"
+                 f"1996 QSAR collapses (LOO R\u00b2 {_fmt(r96, 3)}); 1988 survives "
+                 f"({r88:.3f})\nbut is BELOW one descriptor there ({b88:.3f})",
                  fontsize=FS_SUPTITLE)
     _finish(fig, "Compounds with Ki above the cutoff are dropped and the whole pipeline is "
                  "refitted, permutation null included. Source: results/qsar_tail_sweep.csv "
@@ -811,17 +817,19 @@ def fig_ic50_conversion():
             color="C3", label="uncompetitive: 1 + Km/[S]")
     ax.axhline(1.0, ls=":", color=GREY, lw=1.2, label="noncompetitive: 1")
     ax.axvline(1.0, ls="--", color=GREY, lw=0.9, alpha=0.7)
-    ax.text(1.08, 0.04, "[S] = Km", transform=ax.get_xaxis_transform(), fontsize=FS_NOTE,
-            color="0.35", va="bottom")
+    ax.text(1.08, 0.10, "[S] = Km", transform=ax.get_xaxis_transform(), fontsize=FS_NOTE,
+            color="0.35", va="bottom",
+            bbox=dict(facecolor="white", edgecolor="none", pad=0.6))
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("[S] / Km (dimensionless)")
     ax.set_ylabel("IC50 / Ki (dimensionless)")
     lo_f = cp.correction_factor(0.1, 1.0, "competitive")
     hi_f = cp.correction_factor(100.0, 1.0, "competitive")
-    ax.set_title(f"The competitive IC50\u2192Ki correction runs from {lo_f:.1f}\u00d7 to "
-                 f"{hi_f:.0f}\u00d7\nas [S]/Km rises from 0.1 to 100 "
-                 "(uncompetitive falls 11\u00d7\u21921\u00d7; noncompetitive is 1\u00d7)")
+    # One short line. The three-line version was wider than its half of the
+    # canvas: it was clipped at the left image edge and ran into the right panel's
+    # title, making both unreadable. The detail lives in the suptitle below.
+    ax.set_title("The correction and its direction", fontsize=FS_TITLE)
     ax.legend(loc="upper left", fontsize=FS_NOTE, frameon=False)
 
     ax = axes[1]
@@ -832,9 +840,8 @@ def fig_ic50_conversion():
     ax.set_xlim(logs.min() - 0.3, logs.max() + 0.3)
     ax.set_xlabel("log10 IC50 (nM)")
     ax.set_ylabel(f"IC50 records (n = {len(ics)})")
-    ax.set_title(f"{n_tight} of {len(ics)} IC50 records ({100 * n_tight / len(ics):.0f}%) lie "
-                 f"below 10\u00d7[E] = {thr:g} nM,\nwhere Cheng-Prusoff does not apply "
-                 f"(assumed [E] = {enzyme_nm:g} nM)")
+    ax.set_title(f"{100 * n_tight / len(ics):.0f}% of records are tight-binding",
+                 fontsize=FS_TITLE)
     handles = [Patch(facecolor="C3", alpha=0.25,
                      label=f"IC50 < {thr:g} nM: tight-binding\nregime ({n_tight} records)"),
                Patch(facecolor="C0", alpha=0.85, label=f"all records (n = {len(ics)})")]
@@ -842,6 +849,14 @@ def fig_ic50_conversion():
     ax.annotate(f"{n_high} records above 10$^6$ nM\n(flagged outside_typical_range, kept)",
                 xy=(7.6, 3), xytext=(5.4, 17), fontsize=FS_NOTE - 0.5, color="0.25", ha="left",
                 arrowprops=dict(arrowstyle="-", color="0.5", lw=0.8))
+    # Two short lines, not one long one. The single-line version was wider than the
+    # canvas and clipped at BOTH edges (a vision pass read "o 101x as [S]/Km" on the
+    # left), which is the same failure the panel titles had before this commit.
+    fig.suptitle(f"Competitive IC50\u2192Ki spans {lo_f:.1f}\u00d7 to {hi_f:.0f}\u00d7 "
+                 f"over [S]/Km 0.1-100; uncompetitive falls 11\u00d7\u21921\u00d7\n"
+                 f"{n_tight} of {len(ics)} records ({100 * n_tight / len(ics):.0f}%) lie below "
+                 f"10\u00d7[E] = {thr:g} nM, where Cheng-Prusoff does not apply "
+                 f"(assumed [E] = {enzyme_nm:g} nM)", fontsize=FS_TITLE)
     _finish(fig, f"E. coli DHFR (ChEMBL {datasets.CHEMBL_DHFR_TARGET}): {len(ics)} IC50 records, "
                  f"{len({r['molecule_chembl_id'] for r in table})} compounds. "
                  "Source: data/chembl_dhfr/ecoli_dhfr_ic50.csv.")
