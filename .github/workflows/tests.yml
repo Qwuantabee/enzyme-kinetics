@@ -38,10 +38,11 @@ jobs:
         # The point of the figure generator is that every PNG is reproducible
         # from data in the repo. Running it in CI is the only way that stays
         # true; a figure that needs a file nobody committed fails here.
+        #
+        # Pixel comparison, not `git diff`: matplotlib stamps its own version
+        # into a tEXt chunk, so a runner with a different matplotlib produces a
+        # byte-different PNG with identical pixels. The first CI run failed on
+        # all three repos for exactly that reason (`Bin 142376 -> 142376 bytes`).
         run: |
           python scripts/make_figures.py
-          git diff --exit-code --stat -- figures/ || {
-            echo "figures/ changed when regenerated from committed data.";
-            echo "Commit the regenerated PNGs, or the artefacts drifted.";
-            exit 1;
-          }
+          python scripts/check_figures.py --dir figures
