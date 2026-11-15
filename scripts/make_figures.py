@@ -309,7 +309,8 @@ def fig_cp_two_substrate():
     ax.axvline(d["pred_high"], ls=":", lw=1.3, color="C3")
     ax.scatter(ratios, y, s=50, color="C0", edgecolor="black", linewidth=0.5, zorder=3)
     ax.text(d["median"], len(y) - 0.35, f"median {d['median']:.2f}", ha="center",
-            va="bottom", fontsize=FS_NOTE, color="0.25")
+            va="bottom", fontsize=FS_NOTE, color="0.25",
+            bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none"))
     ax.set_yticks(y)
     ax.set_yticklabels(ids, fontsize=FS_NOTE - 0.5)
     ax.set_ylim(-0.8, len(y) + 0.4)
@@ -420,7 +421,7 @@ def fig_qsar_tail():
                     ms=4.5, alpha=0.75, markeredgecolor="black", markeredgewidth=0.4,
                     zorder=2)
             ax.annotate(_fmt(rows[100.0]["r2"], 3), (x[-1], rows[100.0]["r2"]),
-                        xytext=(9, 0), textcoords="offset points", ha="left", va="center",
+                        xytext=(-9, 0), textcoords="offset points", ha="right", va="center",
                         fontsize=FS_NOTE + 0.5, fontweight="bold", color=colour)
         n96 = [sweep[(SERIES[0][0], subset)][c]["n"] for c in CUTOFFS]
         n88 = [sweep[(SERIES[1][0], subset)][c]["n"] for c in CUTOFFS]
