@@ -808,8 +808,9 @@ def fig_ic50_conversion():
     ax.set_ylabel("IC50 / Ki (dimensionless)")
     lo_f = cp.correction_factor(0.1, 1.0, "competitive")
     hi_f = cp.correction_factor(100.0, 1.0, "competitive")
-    ax.set_title(f"The IC50\u2192Ki correction runs from {lo_f:.1f}\u00d7 to {hi_f:.0f}\u00d7\n"
-                 "as [S]/Km rises from 0.1 to 100")
+    ax.set_title(f"The competitive IC50\u2192Ki correction runs from {lo_f:.1f}\u00d7 to "
+                 f"{hi_f:.0f}\u00d7\nas [S]/Km rises from 0.1 to 100 "
+                 "(uncompetitive falls 11\u00d7\u21921\u00d7; noncompetitive is 1\u00d7)")
     ax.legend(loc="upper left", fontsize=FS_NOTE, frameon=False)
 
     ax = axes[1]
