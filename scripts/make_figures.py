@@ -712,7 +712,8 @@ def fig_inhibition_fit():
         ax.scatter(S[m], v[m], s=28, color=f"C{j}", zorder=3, edgecolor="black",
                    linewidth=0.4)
         ax.plot(smooth, fn(smooth, np.full_like(smooth, lvl), **best.params),
-                color=f"C{j}", lw=1.6, label=f"[I] = {lvl:g}")
+                color=f"C{j}", lw=1.6,
+                label=f"[I] = {lvl:g} (arbitrary units)")
     daicc = {r.model: r.aicc - best.aicc for r in results}
     others = "; ".join(f"{k} {daicc[k]:.1f}" for k in
                        sorted((k for k in daicc if k != best.model), key=daicc.get))
