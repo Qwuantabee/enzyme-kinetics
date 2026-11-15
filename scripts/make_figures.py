@@ -442,8 +442,17 @@ def fig_qsar_tail():
                               label=f"{label}: best single descriptor"))
     r96 = sweep[(SERIES[0][0], "whole series")][100.0]["r2"]
     r88 = sweep[(SERIES[1][0], "whole series")][100.0]["r2"]
-    fig.suptitle("At the drug-relevant 100 nM cutoff the 1996 QSAR fit collapses "
-                 f"(LOO R\u00b2 {_fmt(r96, 3)}); the 1988 fit survives ({r88:.3f})",
+    b88 = sweep[(SERIES[1][0], "whole series")][100.0]["single"]
+    # Honesty (2026-11-15): the old title said the 1988 fit "survives", full
+    # stop. It does survive as a signal (R2 = 0.556 > 0), but the ten-descriptor
+    # model is WORSE than molecular weight alone at that cutoff (0.556 vs 0.578),
+    # so "survives" without that clause reads as a win for the descriptor model
+    # when the tail sweep actually says the opposite. Both numbers are in the
+    # title now.
+    fig.suptitle("At the drug-relevant 100 nM cutoff, whole series: the 1996 QSAR "
+                 f"fit collapses (LOO R\u00b2 {_fmt(r96, 3)}), and the 1988 signal "
+                 f"survives ({r88:.3f})\nbut slightly BELOW one descriptor there "
+                 f"({b88:.3f}) - the ten descriptors add nothing at that cutoff",
                  fontsize=FS_SUPTITLE)
     _finish(fig, "Compounds with Ki above the cutoff are dropped and the whole pipeline is "
                  "refitted, permutation null included. Source: results/qsar_tail_sweep.csv "
