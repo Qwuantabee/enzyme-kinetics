@@ -158,7 +158,7 @@ scripts/      make_figures.py        every figure in figures/ (the only figure w
               prepare_frere2023.py, fit_published.py       published traces: extract, then initial rates vs progress curves
               fetch_chembl_dhfr.py, ic50_to_ki.py, validate_cheng_prusoff.py     IC50/Ki tables, the conversion, the test against measured Ki
               ki_to_structure.py, fetch_chembl_smiles.py, qsar_congeneric.py, qsar_single_scaffold.py, qsar_tail_sweep.py     structure-affinity
-tests/        279 tests: limiting cases on the rate laws, parameter recovery, CI coverage, mechanism identification,
+tests/        281 tests: limiting cases on the rate laws, parameter recovery, CI coverage, mechanism identification,
               progress-curve recovery, Cheng-Prusoff limits and round trips, IC50/Ki pairing on the real ChEMBL tables,
               PDB geometry, descriptors against textbook constants, Spearman/LOOCV against SciPy, the permutation null
               on data with and without signal, and every figure reproducible from its artefact
