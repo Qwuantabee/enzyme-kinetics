@@ -88,11 +88,13 @@ def main():
     out(rep.summary())
 
     out("\n--- what this does NOT establish ---")
-    out("ChEMBL's activity records for this target carry no [S] and no [E].")
-    out("Every Ki above is therefore illustrative of the arithmetic, not a")
-    out("measurement. To validate the conversion against measured Ki you need")
-    out("a paper reporting both for the same compound under stated conditions.")
-    out("That is the open item in README.md.")
+    out("ChEMBL's activity records for this target carry no [S] and no [E] as")
+    out("fields; one publication (CHEMBL1136127) states [S] in its assay")
+    out("descriptions. Every Ki above is therefore illustrative of the")
+    out("arithmetic, not a measurement. The test against measured Ki is")
+    out("scripts/validate_cheng_prusoff.py (results_cheng_prusoff.txt): the form")
+    out("is partially supported; the absolute values stay untested until a paper")
+    out("states [S] and the assay Km next to both IC50 and Ki.")
 
     OUT.write_text("\n".join(lines) + "\n")
     print(f"summary -> {OUT}")

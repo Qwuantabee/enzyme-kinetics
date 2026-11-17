@@ -44,8 +44,10 @@ model=competitive  [S]/Km=2.00  correction=3.00x
   no assumption violations detected
 
 --- what this does NOT establish ---
-ChEMBL's activity records for this target carry no [S] and no [E].
-Every Ki above is therefore illustrative of the arithmetic, not a
-measurement. To validate the conversion against measured Ki you need
-a paper reporting both for the same compound under stated conditions.
-That is the open item in README.md.
+ChEMBL's activity records for this target carry no [S] and no [E] as
+fields; one publication (CHEMBL1136127) states [S] in its assay
+descriptions. Every Ki above is therefore illustrative of the
+arithmetic, not a measurement. The test against measured Ki is
+scripts/validate_cheng_prusoff.py (results_cheng_prusoff.txt): the form
+is partially supported; the absolute values stay untested until a paper
+states [S] and the assay Km next to both IC50 and Ki.
