@@ -1,0 +1,64 @@
+Simulation checks (scripts/sim_checks.py)
+==========================================================================
+design: 8 substrate concentrations, 0.1 to 10 x Km, geometric
+        true Km = 25, Vmax = 100; absolute noise SD = 5 = 55% of the lowest true rate (9.09), 5.5% of the highest (90.91)
+
+--- (a) Lineweaver-Burk Km error under constant absolute error ---
+seeds 0-499 (the README table):
+  sample SD, all 500 fits                        6085.9%
+  sample SD without the  1 most extreme fit(s)     1845.2%
+  sample SD without the  5 most extreme fit(s)      588.4%
+  sample SD without the 10 most extreme fit(s)      289.7%
+  most extreme single fit: seed 401, Km error -129882%
+  fits returning a negative Km: 84 of 500
+
+  method            median error  robust SD  sample SD
+  nonlinear                -1.0%      16.3%      18.2%
+  lineweaver_burk         -37.5%      59.1%    6085.9%
+  hanes_woolf              +5.3%      26.4%     228.2%
+  eadie_hofstee           -26.3%      24.6%      25.2%
+  robust SD = IQR / 1.349 (equals the SD for a normal distribution)
+  Lineweaver-Burk / nonlinear, robust SD: 3.6x
+
+eight further blocks of 500 seeds, same design:
+  seeds       LB sample SD  LB robust SD  LB negative Km  nonlinear SD
+   500-999         4651.1%         57.1%          99 /500         18.0%
+  1000-1499        1087.9%         52.5%          99 /500         17.8%
+  1500-1999        5840.6%         58.3%          87 /500         16.2%
+  2000-2499       11506.8%         72.7%          93 /500         16.1%
+  2500-2999        3605.4%         57.9%         102 /500         17.2%
+  3000-3499        5519.2%         58.4%         100 /500         18.4%
+  3500-3999        1141.8%         60.0%         103 /500         17.7%
+  4000-4499        1337.1%         53.0%          92 /500         18.7%
+  over all nine blocks: LB sample SD 1088% to 11507%, LB robust SD 52.5% to 72.7%
+
+--- (b) mechanism identification: which model ranked first ---
+100 simulated experiments per row, seeds 0-99, the validate_fits.py grid
+candidates: competitive (3 parameters), uncompetitive (3 parameters), noncompetitive (3 parameters), mixed (4 parameters)
+
+  truth           noise  strict hit  ranked first by AICc | by plain AIC
+  competitive        2%         85%  competitive 85, mixed 15 | competitive 80, mixed 20
+  competitive        5%         85%  competitive 85, mixed 15 | competitive 80, mixed 20
+  competitive       10%         85%  competitive 85, mixed 15 | competitive 80, mixed 20
+  uncompetitive      2%         99%  uncompetitive 99, mixed 1 | uncompetitive 96, mixed 4
+  uncompetitive      5%         99%  uncompetitive 99, mixed 1 | uncompetitive 96, mixed 4
+  uncompetitive     10%         94%  uncompetitive 94, noncompetitive 6 | uncompetitive 93, noncompetitive 6, mixed 1
+  noncompetitive     2%         84%  noncompetitive 84, mixed 16 | noncompetitive 79, mixed 21
+  noncompetitive     5%         84%  noncompetitive 84, mixed 16 | noncompetitive 78, mixed 22
+  noncompetitive    10%         85%  noncompetitive 85, mixed 15 | noncompetitive 78, mixed 22
+  mixed              2%        100%  mixed 100 | mixed 100
+  mixed              5%        100%  mixed 100 | mixed 100
+  mixed             10%         84%  noncompetitive 16, mixed 84 | noncompetitive 10, mixed 90
+  strict hit = the true model itself ranked first (validate_fits.py also
+  counts mixed as correct when the truth is noncompetitive)
+
+competitive truth, 5% noise, 100 experiments, 7 x 4 grid from Km/8 up to:
+     8 x Km: competitive 85, mixed 15
+    32 x Km: competitive 79, mixed 21
+   128 x Km: competitive 84, mixed 16
+   512 x Km: competitive 85, mixed 15
+
+what a fixed penalty predicts for a 3-parameter truth nested in mixed, n = 28:
+  AICc      penalty gap 2.74 -> mixed wins when F(1,24) > 2.47, probability 12.9% (linear-model approximation)
+  plain AIC penalty gap 2.00 -> mixed wins when F(1,24) > 1.78, probability 19.5% (linear-model approximation)
+  observed 15 of 100: Wilson 95% interval 9.3% to 23.3%

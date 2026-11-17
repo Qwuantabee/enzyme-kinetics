@@ -7,7 +7,7 @@
 **How wrong can a kinetic constant be when the fit ignores how the data were measured?** Two measured answers:
 
 - **A standard error 12× too small.** On a published trace set (P99 β-lactamase, 18 progress curves, 2376 points) the Km standard error a least-squares fit reports is ±0.185 µM; resampling whole traces gives ±2.21 µM, because readings inside one trace are not independent.
-- **A linear plot that fails under one error model and not the other.** Under constant absolute error Lineweaver-Burk's Km estimates scatter over orders of magnitude (sample SD 6086% against 18.2% for the nonlinear fit, 500 simulated experiments); under proportional error it is as precise as the nonlinear fit (11.1% against 10.3%).
+- **A linear plot that fails under one error model and not the other.** Under constant absolute error Lineweaver-Burk's Km estimates scatter over orders of magnitude (sample SD 6086% against 18.2% for the nonlinear fit, 500 simulated experiments; 84 of the 500 fits return a negative Km); under proportional error it is as precise as the nonlinear fit (11.1% against 10.3%).
 
 That Lineweaver-Burk is unreliable is textbook, not a finding of this repository (Wilkinson 1961, *Biochem J* 80:324; Dowd & Riggs 1965, *J Biol Chem* 240:863). What is added is the size of the effect on a stated design, and the error model under which it disappears.
 
@@ -17,7 +17,7 @@ That Lineweaver-Burk is unreliable is textbook, not a finding of this repository
 
 ![Km recovery by method under proportional and absolute error](figures/km_recovery.png)
 
-**Lineweaver-Burk fails under constant absolute error and not under proportional error.** Km SD over 500 simulated experiments: 6086% for Lineweaver-Burk against 18.2% for the nonlinear fit; under proportional error all four methods sit at 6.2–11.1% (Eadie-Hofstee tightest). The design decides the size: 8 substrate concentrations spaced geometrically from 0.1 to 10 × Km, and a noise SD of 5% of each rate (proportional) or 5% of Vmax (absolute), which is 55% of the lowest true rate. Read the 6086% as an order of magnitude, not as a constant: Lineweaver-Burk's Km is a slope divided by an intercept that crosses zero, so its sampling distribution has no finite variance and the sample SD is set by the few fits beyond ±1000% in the right-hand panel. Only these two error models and this one design were run.
+**Lineweaver-Burk fails under constant absolute error and not under proportional error.** Km SD over 500 simulated experiments: 6086% for Lineweaver-Burk against 18.2% for the nonlinear fit; under proportional error all four methods sit at 6.2–11.1% (Eadie-Hofstee tightest). The design decides the size: 8 substrate concentrations spaced geometrically from 0.1 to 10 × Km, and a noise SD of 5% of each rate (proportional) or 5% of Vmax (absolute), which is 55% of the lowest true rate. Read the 6086% as an order of magnitude, not as a constant: Lineweaver-Burk's Km is a slope divided by an intercept that crosses zero, so its sampling distribution has no finite variance and the sample SD is set by the few fits beyond ±1000% in the right-hand panel. Without the single most extreme fit it is 1845%, and eight further blocks of 500 seeds give 1088% to 11507%. What is stable is a tail-insensitive spread (IQR / 1.349): 59% for Lineweaver-Burk against 16% for the nonlinear fit, 3.6× worse, and 52.5–72.7% across all nine blocks (`results_sim_checks.txt`). Only these two error models and this one design were run.
 
 ![Km of P99 beta-lactamase: initial rates, i.i.d. SE, trace bootstrap](figures/km_uncertainty.png)
 
@@ -95,7 +95,7 @@ All [I] levels are fitted in one global fit, not one fit per [I], and the four c
 | noncompetitive | 100% | 100% | 100% |
 | mixed | 100% | 100% | 84% |
 
-Competitive stays at 85% at every noise level, so the misses do not come from noise. Competitive is nested inside mixed (Kis → ∞), so the mixed model can always fit at least as well, and a penalty of fixed size lets it win a fixed fraction of the time whatever the noise: a false-positive rate of the criterion, not a property of the data. An earlier version of this paragraph said that higher [S] would break the tie; that was never run and is withdrawn. **The noncompetitive row is scored leniently**: mixed counts as correct when the truth is noncompetitive (the Ki = Kis special case nested inside it), so its 100% does not say how often the 3-parameter truth itself ranked first, and the table does not report which wrong model won in any row.
+Competitive stays at 85% at every noise level, so the misses do not come from noise. Competitive is nested inside mixed (Kis → ∞), so the mixed model can always fit at least as well, and a penalty of fixed size lets it win a fixed fraction of the time whatever the noise: a false-positive rate of the criterion, not a property of the data. Every competitive miss is the mixed model (15 of 100 at each noise level; a fixed penalty predicts about 13% at n = 28). An earlier version of this paragraph said that higher [S] would break the tie; run, it does not: extending the grid to 32, 128 and 512 × Km leaves mixed winning 21, 16 and 15 of 100. **The noncompetitive row is scored leniently**: mixed counts as correct when the truth is noncompetitive (the Ki = Kis special case nested inside it); scored strictly that row is 84%, 84% and 85%, not 100%. The correction earns its place on the nested cases and costs power at the other end: plain AIC picks mixed over a competitive truth 20 times in 100 where AICc picks it 15, and with a mixed truth at 10% noise the hit rate is 84% under AICc, 90% under plain AIC. Full pick counts: `results_sim_checks.txt`.
 
 ![inhibition fit](figures/inhibition_fit.png)
 
@@ -154,10 +154,11 @@ src/enzkin/   models (rate laws) · fitting (NLS, SE, AICc, bootstrap) · progre
               simulate · plotting (library helpers; figures/ is written only by scripts/make_figures.py)
 scripts/      make_figures.py        every figure in figures/ (the only figure writer)
               validate_fits.py       the simulation study behind the tables above
+              sim_checks.py          what the Lineweaver-Burk SD is made of; which model wins in the mechanism study
               prepare_frere2023.py, fit_published.py       published traces: extract, then initial rates vs progress curves
               fetch_chembl_dhfr.py, ic50_to_ki.py, validate_cheng_prusoff.py     IC50/Ki tables, the conversion, the test against measured Ki
               ki_to_structure.py, fetch_chembl_smiles.py, qsar_congeneric.py, qsar_single_scaffold.py, qsar_tail_sweep.py     structure-affinity
-tests/        262 tests: limiting cases on the rate laws, parameter recovery, CI coverage, mechanism identification,
+tests/        279 tests: limiting cases on the rate laws, parameter recovery, CI coverage, mechanism identification,
               progress-curve recovery, Cheng-Prusoff limits and round trips, IC50/Ki pairing on the real ChEMBL tables,
               PDB geometry, descriptors against textbook constants, Spearman/LOOCV against SciPy, the permutation null
               on data with and without signal, and every figure reproducible from its artefact
@@ -171,6 +172,7 @@ python -m venv .venv
 pip install -e ".[all]"              # ".[dev]" leaves out RDKit, see below
 python -m pytest                     # about 45 s
 python scripts/validate_fits.py      # print the simulation tables and the mechanism table
+python scripts/sim_checks.py         # results_sim_checks.txt, about 10 s
 python scripts/fit_published.py      # the P99 fits and the trace bootstrap, about a minute
 python scripts/make_figures.py       # regenerate figures/
 ```
