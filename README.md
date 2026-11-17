@@ -9,7 +9,7 @@
 - **A standard error 12× too small.** On a published trace set (P99 β-lactamase, 18 progress curves, 2376 points) the Km standard error a least-squares fit reports is ±0.185 µM; resampling whole traces gives ±2.21 µM, because readings inside one trace are not independent.
 - **A linear plot that fails under one error model and not the other.** Under constant absolute error Lineweaver-Burk's Km estimates scatter over orders of magnitude (sample SD 6086% against 18.2% for the nonlinear fit, 500 simulated experiments; 84 of the 500 fits return a negative Km); under proportional error it is as precise as the nonlinear fit (11.1% against 10.3%).
 
-That Lineweaver-Burk is unreliable is textbook, not a finding of this repository (Wilkinson 1961, *Biochem J* 80:324; Dowd & Riggs 1965, *J Biol Chem* 240:863). What is added is the size of the effect on a stated design, and the error model under which it disappears.
+That Lineweaver-Burk is unreliable is textbook, not a finding of this repository (Wilkinson 1961, *Biochem J* 80:324; Dowd & Riggs 1965, *J Biol Chem* 240:863). Nothing here is a new result about the plots; what the repository adds is a reproducible measurement of the size of the effect, on a stated design, under two error models.
 
 `enzkin` is the small library behind those numbers: Michaelis-Menten and inhibition fits for initial rates and progress curves, AICc ranking of four inhibition mechanisms, IC50-to-Ki conversion tested against ChEMBL *E. coli* DHFR records, and a descriptor QSAR with a permutation null. Every figure is regenerated from committed data by `python scripts/make_figures.py`.
 
@@ -340,7 +340,7 @@ Two errors that simulation could never have produced, caught by reading the real
 
 ## Fitting the published dataset
 
-`scripts/fit_published.py`, `scripts/prepare_frere2023.py`. The 136 MB archive lives outside git; the 18 extracted traces (84 KB) are committed because the tests read them.
+`scripts/fit_published.py`, `scripts/prepare_frere2023.py`. The 136 MB archive lives outside git; the extracted traces are committed because the tests read them (21 files, 84 KB on disk: the 18 used here and 3 repeats of traces already present, which the loader excludes by name).
 
 | method | Vmax (µM/min) | Km (µM) | kcat (s⁻¹) | Km rel. SE |
 |---|---|---|---|---|
@@ -352,7 +352,7 @@ Two errors that simulation could never have produced, caught by reading the real
 
 *Progress curves put Km at 29.6 µM, 18% above the published 25 µM; initial rates put it 36% above.*
 
-The progress-curve SE is a **trace-level cluster bootstrap** (400 resamples, stratified by [S]₀): 95% CI for Km [25.74, 33.44] µM, with the published 25 µM just below it. Km lands within 18% of the published 25 µM and kcat within 17% of 780 s⁻¹. The i.i.d. SE the fit returns, 0.19 µM, is not an uncertainty and gives a Km SD about **12× too small**. The real gain over initial rates is the **Km SE, about 2× (5.03 → 2.21 µM), not 25×**: the 25× came from the i.i.d. SE and is wrong.
+The progress-curve SE is a **trace-level cluster bootstrap** (400 resamples, stratified by [S]₀): 95% CI for Km [25.74, 33.44] µM, with the published 25 µM just below it. Km lands within 18% of the published 25 µM and kcat within 17% of 780 s⁻¹. The i.i.d. SE the fit returns, 0.19 µM, is not an uncertainty and gives a Km SD about **12× too small**. The real gain over initial rates is the **Km SE, about 2× (5.03 → 2.21 µM), not 27×**: the 27× (5.03 / 0.185) is what the i.i.d. SE would claim, and it is wrong.
 
 <details>
 <summary>Why the i.i.d. SE fails, what the residual SD can and cannot say, and the Vmax gap</summary>
