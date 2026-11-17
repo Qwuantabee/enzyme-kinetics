@@ -4,17 +4,24 @@
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Qwuantabee/enzyme-kinetics/blob/main/LICENSE)
 [![python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](https://github.com/Qwuantabee/enzyme-kinetics/blob/main/pyproject.toml)
 
-Fitting Michaelis-Menten and inhibition models to initial-rate and progress-curve data, with honest uncertainty and mechanism assignment by AICc rather than by eye. Validated on simulated data with known truth, on one published trace set (Frère 2023) and on ChEMBL *E. coli* DHFR records. Every figure is regenerated from committed data by `python scripts/make_figures.py`.
+**How wrong can a kinetic constant be when the fit ignores how the data were measured?** Two measured answers:
+
+- **A standard error 12× too small.** On a published trace set (P99 β-lactamase, 18 progress curves, 2376 points) the Km standard error a least-squares fit reports is ±0.185 µM; resampling whole traces gives ±2.21 µM, because readings inside one trace are not independent.
+- **A linear plot that fails under one error model and not the other.** Under constant absolute error Lineweaver-Burk's Km estimates scatter over orders of magnitude (sample SD 6086% against 18.2% for the nonlinear fit, 500 simulated experiments); under proportional error it is as precise as the nonlinear fit (11.1% against 10.3%).
+
+That Lineweaver-Burk is unreliable is textbook, not a finding of this repository (Wilkinson 1961, *Biochem J* 80:324; Dowd & Riggs 1965, *J Biol Chem* 240:863). What is added is the size of the effect on a stated design, and the error model under which it disappears.
+
+`enzkin` is the small library behind those numbers: Michaelis-Menten and inhibition fits for initial rates and progress curves, AICc ranking of four inhibition mechanisms, IC50-to-Ki conversion tested against ChEMBL *E. coli* DHFR records, and a descriptor QSAR with a permutation null. Every figure is regenerated from committed data by `python scripts/make_figures.py`.
 
 ## At a glance
 
 ![Km recovery by method under proportional and absolute error](figures/km_recovery.png)
 
-**Lineweaver-Burk fails only under constant absolute error.** Km SD over 500 simulated experiments: 6086% for Lineweaver-Burk against 18.2% for the nonlinear fit; under proportional error all four methods sit at 6.2–11.1% (Eadie-Hofstee tightest).
+**Lineweaver-Burk fails under constant absolute error and not under proportional error.** Km SD over 500 simulated experiments: 6086% for Lineweaver-Burk against 18.2% for the nonlinear fit; under proportional error all four methods sit at 6.2–11.1% (Eadie-Hofstee tightest). The design decides the size: 8 substrate concentrations spaced geometrically from 0.1 to 10 × Km, and a noise SD of 5% of each rate (proportional) or 5% of Vmax (absolute), which is 55% of the lowest true rate. Read the 6086% as an order of magnitude, not as a constant: Lineweaver-Burk's Km is a slope divided by an intercept that crosses zero, so its sampling distribution has no finite variance and the sample SD is set by the few fits beyond ±1000% in the right-hand panel. Only these two error models and this one design were run.
 
 ![Km of P99 beta-lactamase: initial rates, i.i.d. SE, trace bootstrap](figures/km_uncertainty.png)
 
-**The i.i.d. Km standard error is 12× too small.** Treating 2376 points as independent gives ±0.185 µM; the trace-level bootstrap gives ±2.21 µM, still tighter than initial rates (±5.03 µM). The published 25 µM lies just below the 95% interval (25.74–33.44).
+**The i.i.d. Km standard error is 12× too small on this dataset.** Treating 2376 points as independent gives ±0.185 µM; resampling the 18 traces whole (400 resamples, stratified by starting substrate concentration, 2 to 5 traces at each of 5 concentrations) gives ±2.21 µM, still tighter than initial rates (±5.03 µM). The published 25 µM lies just below the 95% interval (25.74–33.44). The factor belongs to this sampling density, not to the method: the i.i.d. SE shrinks with every extra reading per trace and the trace-level SE does not.
 
 ![IC50/Ki ratios per assay condition](figures/cp_ratio_spread.png)
 
@@ -24,9 +31,18 @@ Fitting Michaelis-Menten and inhibition models to initial-rate and progress-curv
 
 **The structure-affinity signal depends on the potency range.** Keeping only Ki < 100 nM, leave-one-out R² is **−0.070** (n = 33) in the 1996 series and **0.556** (n = 25) in the 1988 series, where one descriptor does as well (0.578).
 
+## What this does not show
+
+- **The simulation numbers belong to one design.** One substrate grid (8 points, 0.1 to 10 × Km), one noise level (5%), Gaussian noise, two error models. No other grid or noise level was run, so none of the percentages transfers to another assay as a number.
+- **The 12× is one dataset.** One enzyme, one substrate, one laboratory, 18 traces. The bootstrap has 18 units in strata of 2 to 5, so its own SE and interval are coarse, and "the published 25 µM lies just below the interval" is not a rejection of the published value.
+- **The mechanism table tests four candidates against each other and nothing else.** Competitive, uncompetitive, noncompetitive and mixed; no partial, tight-binding or slow-binding model. The data are simulated with proportional noise and fitted unweighted, 100 experiments per cell.
+- **The IC50/Ki comparison rests on 47 pairs from 5 papers**, 22 of them from one paper. Its verdict label depends on a threshold chosen here (0.30), and flips at 0.25.
+- **The QSAR describes variation inside series that were already measured.** It is not a prediction for a new compound, and molecular weight alone carries most of it.
+- **The ChEMBL tables are a snapshot** fetched by `scripts/fetch_chembl_dhfr.py`; a re-fetch can return different records.
+
 ## Why not just use a Lineweaver-Burk plot
 
-The textbook warning, that inverting `v` inflates the error on the low-[S] points and wrecks the regression, is correct **only under constant absolute error**. Under proportional error the transforms are fine and Eadie-Hofstee is the most precise, because the reciprocal stabilises proportional variance. 500 simulated datasets per error model (8 substrate concentrations, 5% noise, true Km = 25, Vmax = 100; figure above):
+The textbook warning, that inverting `v` inflates the error on the low-[S] points and wrecks the regression, held here **under constant absolute error and not under proportional error**. Under proportional error the transforms are fine and Eadie-Hofstee is the most precise, because the reciprocal stabilises proportional variance. 500 simulated datasets per error model (seeds 0–499; 8 substrate concentrations spaced geometrically from 0.1 to 10 × Km; noise SD 5%, of each rate in the first table and of Vmax in the second; true Km = 25, Vmax = 100; figure above):
 
 **Proportional error** (noise scales with the rate):
 
@@ -46,11 +62,13 @@ The textbook warning, that inverting `v` inflates the error on the low-[S] point
 | Hanes-Woolf | +17.6% | 228% | +2.3% | 29.9% |
 | Eadie-Hofstee | -23.8% | 25.2% | -12.3% | 10.3% |
 
-Which model applies is a property of the assay, not of the algebra: a continuous spectrophotometric read of a small absorbance change is closer to constant absolute error, where Lineweaver-Burk falls apart; a dilution-series or counting assay is usually closer to proportional. The nonlinear fit is the only method never the worst, so it is the default; `weights="relative"` switches to proportional-error weighting.
+Under absolute error the lowest rate is 9.1 against a noise SD of 5, so its reciprocal is what the regression mostly fits; that is the mechanism of the failure, and a design whose lowest [S] sits higher should show less of it (not run). The Lineweaver-Burk bias and SD in the second table are sample moments of a distribution without a finite mean or variance: they reproduce exactly from seeds 0–499 and would be different numbers of the same kind on other seeds.
+
+Which model applies is a property of the assay, not of the algebra: a continuous spectrophotometric read of a small absorbance change is closer to constant absolute error, where Lineweaver-Burk falls apart; a dilution-series or counting assay is usually closer to proportional. The nonlinear fit is the only method whose bias stays near 1% and whose Km SD stays below 20% in both tables, so it is the default; `weights="relative"` switches to proportional-error weighting. (Hanes-Woolf, like the nonlinear fit, is never the worst entry in a column, but its Km SD is 228% under absolute error.)
 
 ## Confidence intervals
 
-The first `ci95` used ±1.96·SE and covered the true Km **86.8%** of the time while claiming 95% (proportional-error simulation; 89.4% under constant absolute error, reproduced by swapping 1.96 for the t value on the same 500 fits). With 8 points and 2 parameters (6 degrees of freedom) the critical value is t = 2.45, not 1.96; the t distribution raised coverage to **91.0%** (proportional error) and **93.2%** (absolute error). The remaining gap is not a bug: Km and Vmax are bounded below at zero and right-skewed, so no symmetric interval is exact. When the SE is a large fraction of the estimate, use `bootstrap_ci` (residual resampling, no symmetry assumption).
+The first `ci95` used ±1.96·SE and covered the true Km **86.8%** of the time while claiming 95% (proportional-error simulation; 89.4% under constant absolute error, reproduced by swapping 1.96 for the t value on the same 500 fits). With 8 points and 2 parameters (6 degrees of freedom) the critical value is t = 2.45, not 1.96; the t distribution raised coverage to **91.0%** (proportional error) and **93.2%** (absolute error). These are 500 fits each, so every coverage figure carries about ±2 to ±3 points of binomial error: the 93.2% is not distinguishable from 95%, the 91.0% is. The gap that remains is expected rather than a bug: Km and Vmax are bounded below at zero and right-skewed, so no symmetric interval is exact, and under proportional error the fit is unweighted, which the simulation does not separate from the skew. When the SE is a large fraction of the estimate, use `bootstrap_ci` (residual resampling, no symmetry assumption).
 
 ## How far up the substrate range you need to go
 
@@ -64,11 +82,11 @@ Median relative standard error over 200 simulated runs, by highest substrate con
 | 10 × Km | 2.4% | 7.8% | 91% |
 | 20 × Km | 2.2% | 8.1% | 95% |
 
-Most of the benefit is gone by 5 × Km: past it Km barely improves and Vmax gains about half a percent for four times the substrate.
+Most of the benefit is gone by 5 × Km: past it the Km SE does not improve (7.8% at 5 ×, 8.1% at 20 ×) and the Vmax SE gains 0.7 percentage points (2.9% to 2.2%) for four times the substrate.
 
 ## Mechanism identification
 
-All [I] levels are fitted in one global fit, not one fit per [I], and ranked by AICc (small-sample corrected: plain AIC under-penalises the 4-parameter mixed model). Fraction of 100 simulated experiments that recovered the true mechanism, on a 7 × 4 substrate-by-inhibitor grid:
+All [I] levels are fitted in one global fit, not one fit per [I], and the four candidates (competitive, uncompetitive, noncompetitive: 3 parameters each; mixed: 4) are ranked by AICc. The small-sample correction is used because each fit has 28 points: it widens the penalty gap between a 3- and a 4-parameter model from 2.00 to 2.74, which is what stands between a nested 3-parameter truth and the mixed model that can always fit it at least as well. Fraction of 100 simulated experiments in which the true mechanism ranked first, on a 7 × 4 substrate-by-inhibitor grid ([S] from Km/8 to 8 × Km, [I] = 0, 5, 15, 45; picking one of four at random would score 25%):
 
 | true mechanism | 2% noise | 5% noise | 10% noise |
 |---|---|---|---|
@@ -77,7 +95,7 @@ All [I] levels are fitted in one global fit, not one fit per [I], and ranked by 
 | noncompetitive | 100% | 100% | 100% |
 | mixed | 100% | 100% | 84% |
 
-Competitive stays at 85% at every noise level, so the failure is structural, not statistical: a mixed inhibitor with Kis much larger than Ki is nearly indistinguishable from a competitive one on this design, and higher [S] is what breaks the tie (that is where the ES-binding term shows). Mixed counts as correct when the truth is noncompetitive, the Ki = Kis special case nested inside it.
+Competitive stays at 85% at every noise level, so the misses do not come from noise. Competitive is nested inside mixed (Kis → ∞), so the mixed model can always fit at least as well, and a penalty of fixed size lets it win a fixed fraction of the time whatever the noise: a false-positive rate of the criterion, not a property of the data. An earlier version of this paragraph said that higher [S] would break the tie; that was never run and is withdrawn. **The noncompetitive row is scored leniently**: mixed counts as correct when the truth is noncompetitive (the Ki = Kis special case nested inside it), so its 100% does not say how often the 3-parameter truth itself ranked first, and the table does not report which wrong model won in any row.
 
 ![inhibition fit](figures/inhibition_fit.png)
 
@@ -149,15 +167,19 @@ tests/        262 tests: limiting cases on the rate laws, parameter recovery, CI
 
 ```
 python -m venv .venv
-.venv/Scripts/pip install -e ".[dev]"
-.venv/Scripts/python -m pytest
-.venv/Scripts/python scripts/make_figures.py     # regenerate figures/
-.venv/Scripts/python scripts/validate_fits.py    # print the simulation tables
+. .venv/bin/activate                 # Windows: .venv\Scripts\activate
+pip install -e ".[all]"              # ".[dev]" leaves out RDKit, see below
+python -m pytest                     # about 45 s
+python scripts/validate_fits.py      # print the simulation tables and the mechanism table
+python scripts/fit_published.py      # the P99 fits and the trace bootstrap, about a minute
+python scripts/make_figures.py       # regenerate figures/
 ```
+
+Dependencies are given as lower bounds in `pyproject.toml`; there is no lock file. The simulation tables depend only on NumPy's seeded generator and SciPy's least squares, and reproduce to every printed digit on Linux with Python 3.12, NumPy 2.5 and SciPy 1.18.
 
 RDKit (the descriptor analysis only) is an optional extra, `pip install -e ".[qsar]"`, because it is a large binary wheel and nothing else here needs it. Its tests skip when it is absent, except `test_rdkit_is_installed_so_the_descriptor_tests_actually_run`, which fails, so a green run cannot mean the descriptor layer never ran; the statistics in `tests/test_qsar.py` are tested against SciPy independently of it.
 
-## Still to do
+## What each planned item found, and what is still open
 
 Updated after the published-data pass, the IC50/Ki validation, and the
 congeneric-series descriptor test. None of the original items is still open;
@@ -212,9 +234,13 @@ what is left in those is written down rather than quietly dropped.
   | strict, sensitivity: excluding the 7 Ki records described as "antibacterial" | 40 | 9.99 | 4.75–20.25 | 0.418 |
 
   The 95% bootstrap interval for the strict median is 5.08–11.05 if pairs are
-  treated as independent, and **4.25–20.50** with a paper-level cluster
-  bootstrap (6 clusters); the second is the one to read, because pairs from one
-  paper share an assay, and with so few clusters it is coarse.
+  treated as independent, and **4.25–20.50** with a cluster bootstrap over
+  the 6 assay-condition groups; the second is the one to read, because pairs
+  from one assay share its conditions, and with so few clusters it is coarse.
+  The 6 groups come from 5 papers: the two [S] groups of CHEMBL1136127 are the
+  same 11 compounds divided by the same 11 Ki values, so they are not
+  independent of each other, and neither this interval nor the ANOVA below
+  accounts for that. A bootstrap over the 5 papers has not been run.
 
   The median ratio of 9.4 implies a typical [S]/Km of 8.4 — but that pooled
   number averages assay conditions whose own medians are 3.0, 4.2, 4.6, 9.7
@@ -356,7 +382,7 @@ The tight-binding bound is the one that reorders series: at an assumed 10 nM enz
 
 ### Is the conversion right? Measured against real Ki values
 
-`scripts/validate_cheng_prusoff.py`: the *form* is **partially supported** and the *values* are untested. 52 compounds appear in both the IC50 and the Ki tables; for 35 both measurements come from the *same publication* (47 pairs, IC50 records of different stated [S] kept apart; 36 if pooled). The table, bootstrap interval, ANOVA, per-group slopes, two-substrate check and verdict rule with its threshold sensitivity are in the "Validating the conversion against measured Ki" item under "Still to do", regenerated from `results_cheng_prusoff.txt`.
+`scripts/validate_cheng_prusoff.py`: the *form* is **partially supported** and the *values* are untested. 52 compounds appear in both the IC50 and the Ki tables; for 35 both measurements come from the *same publication* (47 pairs, IC50 records of different stated [S] kept apart; 36 if pooled). The table, bootstrap interval, ANOVA, per-group slopes, two-substrate check and verdict rule with its threshold sensitivity are in the "Validating the conversion against measured Ki" item under "What each planned item found", regenerated from `results_cheng_prusoff.txt`.
 
 ![two-substrate check](figures/cp_two_substrate.png)
 
@@ -385,7 +411,7 @@ These count (protein atom, ligand atom) pairs under distance cutoffs, with no an
 |---|---|---|---|---|---|---|
 | CHEMBL1123078 (J Med Chem 1985) | 21 | 1.9 | 0.021–16 nM (762×) | **−1.021** | HBD, 0.182 | 0.678 |
 | CHEMBL1129627 (J Med Chem 1996) | 73 | 6.6 | 1.35–912000 nM | **0.326** | MW, 0.222 | ≤0.001 |
-| CHEMBL1124156 (J Med Chem 1988) | 72 | 6.6 | 0.012–912000 nM | **0.624** | MW, 0.458 | ≤0.001 |
+| CHEMBL1124156 (J Med Chem 1988) | 72 | 6.5 | 0.012–912000 nM | **0.624** | MW, 0.458 | ≤0.001 |
 
 `p_perm` is floored at 1/(n_perm+1) = 0.001; on both larger series no shuffle reached the observed score.
 
@@ -410,7 +436,7 @@ The limits that matter (every number is in the details below):
 
 **The permutation null is genuinely against us.** Shuffled R² on the 73-compound set: mean −0.201, 95th percentile −0.052, maximum 0.098, against 0.326 observed; on the 72-compound set: mean −0.215, 95th percentile −0.040, maximum 0.146, against 0.624.
 
-**Descriptor signs.** Correlations are against log10 Ki (nM), so a *negative* rho means the descriptor raises affinity: bigger, more polar, more flexible compounds bind *better* here. In CHEMBL1129627 rho(MW, log10 Ki) = −0.532, MolRefract −0.436, HBA −0.352, TPSA −0.257, logP −0.207, RotB −0.118; the one exception is HBD at +0.064 (p = 0.59), so the direction is not uniform across descriptors, and CHEMBL1124156 repeats the pattern more strongly (MW −0.507). A larger, more lipophilic ligand binding tighter is consistent with a growing hydrophobic contact area rather than a size penalty, but 2D descriptors cannot tell the two apart. The ten descriptors are MW, logP, TPSA, HBD, HBA, rotatable bonds, rings, aromatic rings, fraction Csp3 and molar refractivity (RDKit 2026.09.2). Source: `results_qsar.txt` (univariate Spearman blocks, both series).
+**Descriptor signs.** Correlations are against log10 Ki (nM), so a *negative* rho means the descriptor raises affinity: bigger, more polar, more flexible compounds bind *better* here. In CHEMBL1129627 rho(MW, log10 Ki) = −0.532, MolRefract −0.436, HBA −0.352, TPSA −0.257, logP −0.207, RotB −0.118; the one exception is HBD at +0.064 (p = 0.59), so the direction is not uniform across descriptors, and CHEMBL1124156 repeats the pattern (MW −0.507, slightly weaker; RotB −0.516 and TPSA −0.417, stronger). A larger ligand binding tighter is consistent with a growing hydrophobic contact area rather than a size penalty, but 2D descriptors cannot tell the two apart, and logP itself is not significant in either series (rho −0.207, p = 0.078; −0.224, p = 0.058). The ten descriptors are MW, logP, TPSA, HBD, HBA, rotatable bonds, rings, aromatic rings, fraction Csp3 and molar refractivity (RDKit 2026.09.2). Source: `results_qsar.txt` (univariate Spearman blocks, both series).
 
 **Scaffold restriction.** CHEMBL1124156 (the 1988 set) contains 9 Murcko scaffolds, so "congeneric" is generous there; that confound was tested and did not explain the result: restricted to its largest scaffold (52 of 72 compounds) the LOO R² is 0.653 against 0.624 for the whole set, p_perm = 0.001. What the restriction does show is that the fit is molecular weight and essentially only molecular weight (MW alone reaches 0.644, a +0.009 gain for the other nine descriptors), so the honest reading of that series is a molecular-weight (size/hydrophobicity) effect inside one chemotype, not a complementarity model. MW correlates negatively with log10 Ki, so the heavier compounds in this series bind tighter and this is not a penalty for being large. The 1996 set is the cleaner test, 66 of 73 on one scaffold, where the ten descriptors still add +0.109 over MW alone.
 
