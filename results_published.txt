@@ -39,6 +39,14 @@ Km relative SE: initial rates 14.8%, progress 7.5% (cluster bootstrap)
 
 Vmax gap between the two analyses: 1.74 uM/min = 0.75 initial-rate SE. A gap under one SE is not evidence of anything.
 
+--- initial rates: dependence on the window ---
+ window     Vmax       Km     kcat  n_ok
+     5%    35.24    34.98      979     5
+    10%    35.07    34.72      974     5
+    15%    34.45    33.98      957     5
+    25%    34.50    34.84      958     5
+    40%    34.99    37.32      972     5
+
 --- the paper's premise, measured on our fits ---
 lowest [S]0 = 11.1 uM = 0.33 x fitted Km
 At that concentration the reaction is far from saturated, so the

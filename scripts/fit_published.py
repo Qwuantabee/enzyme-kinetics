@@ -45,23 +45,25 @@ OUT = ROOT / "results_published.txt"
 WINDOWS = (0.05, 0.10, 0.15, 0.25, 0.40)
 
 
-def window_sensitivity():
-    """How much does the initial-rate answer depend on the window chosen?"""
-    print("\n--- initial rates: dependence on the window ---")
-    print(f"{'window':>7} {'Vmax':>8} {'Km':>8} {'kcat':>8} {'n_ok':>5}")
+def window_sensitivity(emit=print):
+    """How much does the initial-rate answer depend on the window chosen?
+    main() passes its own writer, so the table lands in results_published.txt
+    as well as on stdout (the README quotes it)."""
+    emit("\n--- initial rates: dependence on the window ---")
+    emit(f"{'window':>7} {'Vmax':>8} {'Km':>8} {'kcat':>8} {'n_ok':>5}")
     rows = {}
     for frac in WINDOWS:
         try:
             table = datasets.initial_rate_table(frac)
         except ValueError as exc:
-            print(f"{frac:7.0%}  skipped ({exc})")
+            emit(f"{frac:7.0%}  skipped ({exc})")
             continue
         S = np.array([r["s0_um"] for r in table])
         v = np.array([r["v_um_per_min"] for r in table])
         fit = fitting.fit_michaelis_menten(S, v)
         kcat = datasets.kcat_from_vmax(fit.params["vmax"])
         rows[frac] = (fit, table)
-        print(f"{frac:7.0%} {fit.params['vmax']:8.2f} {fit.params['km']:8.2f} "
+        emit(f"{frac:7.0%} {fit.params['vmax']:8.2f} {fit.params['km']:8.2f} "
               f"{kcat:8.0f} {len(table):5d}")
     return rows
 
@@ -140,7 +142,7 @@ def main():
         f"{(rate_fit.params['vmax'] - prog.vmax) / rate_fit.stderr['vmax']:.2f} "
         f"initial-rate SE. A gap under one SE is not evidence of anything.")
 
-    window_sensitivity()
+    window_sensitivity(out)
 
     # simple check of the paper's own claim, on our fits
     out("\n--- the paper's premise, measured on our fits ---")
