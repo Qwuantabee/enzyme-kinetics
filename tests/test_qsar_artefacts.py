@@ -17,7 +17,7 @@ def _load(name):
 
 
 def test_results_qsar_holds_all_three_series_and_the_csv_too():
-    """d72ca0b replaced the artefact with a two-series run and deleted the
+    """c0b0afd replaced the artefact with a two-series run and deleted the
     21-compound section the README quotes. A rerun must not do that again."""
     mod = _load("qsar_congeneric")
     text = (ROOT / "results_qsar.txt").read_text()

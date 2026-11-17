@@ -14,7 +14,7 @@ README = (ROOT / "README.md").read_text()
 
 
 def test_qsar_direction_is_stated_the_right_way_round():
-    """fe2ed35: the README had 'bind worse' for a negative rho against
+    """a95b172: the README had 'bind worse' for a negative rho against
     log10 Ki. A negative rho means the descriptor raises affinity."""
     assert "bind *better* here" in README
     assert "bind *worse*" not in README
