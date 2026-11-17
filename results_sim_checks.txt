@@ -52,6 +52,24 @@ candidates: competitive (3 parameters), uncompetitive (3 parameters), noncompeti
   strict hit = the true model itself ranked first (validate_fits.py also
   counts mixed as correct when the truth is noncompetitive)
 
+--- (c) AICc parameter count: rate parameters only (k) or k + 1 ---
+fitting._aicc uses k = number of rate parameters (3 or 4); the residual
+variance is not counted. Same 1200 experiments as (b), ranked again with k + 1:
+  truth           noise  k + 1: strict hit; ranked first; winner changed vs k
+  competitive        2%  k + 1: 87 of 100; competitive 87, mixed 13; changed 2 of 100
+  competitive        5%  k + 1: 87 of 100; competitive 87, mixed 13; changed 2 of 100
+  competitive       10%  k + 1: 85 of 100; competitive 85, mixed 15; changed 0 of 100
+  uncompetitive      2%  k + 1: 99 of 100; uncompetitive 99, mixed 1; changed 0 of 100
+  uncompetitive      5%  k + 1: 99 of 100; uncompetitive 99, mixed 1; changed 0 of 100
+  uncompetitive     10%  k + 1: 94 of 100; uncompetitive 94, noncompetitive 6; changed 0 of 100
+  noncompetitive     2%  k + 1: 85 of 100; noncompetitive 85, mixed 15; changed 1 of 100
+  noncompetitive     5%  k + 1: 87 of 100; noncompetitive 87, mixed 13; changed 3 of 100
+  noncompetitive    10%  k + 1: 87 of 100; noncompetitive 87, mixed 13; changed 2 of 100
+  mixed              2%  k + 1: 100 of 100; mixed 100; changed 0 of 100
+  mixed              5%  k + 1: 100 of 100; mixed 100; changed 0 of 100
+  mixed             10%  k + 1: 81 of 100; competitive 1, noncompetitive 18, mixed 81; changed 3 of 100
+  winner changed in 13 of 1200 experiments
+
 competitive truth, 5% noise, 100 experiments, 7 x 4 grid from Km/8 up to:
      8 x Km: competitive 85, mixed 15
     32 x Km: competitive 79, mixed 21

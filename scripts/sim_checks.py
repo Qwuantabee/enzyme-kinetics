@@ -63,6 +63,14 @@ def aic_plain(r):
     return r.n * np.log(r.rss / r.n) + 2 * len(r.params)
 
 
+def aicc_with_variance(r):
+    """AICc with the residual variance counted as a parameter (k + 1).
+    fitting._aicc counts the rate parameters only; this is the other common
+    convention, used here to check whether the choice moves any ranking."""
+    k = len(r.params) + 1
+    return r.n * np.log(r.rss / r.n) + 2 * k + 2 * k * (k + 1) / (r.n - k - 1)
+
+
 def main():
     lines = []
 
@@ -117,18 +125,36 @@ def main():
     out(f"candidates: {', '.join(f'{k} ({len(v[1])} parameters)' for k, v in models.INHIBITION_MODELS.items())}")
     out()
     out(f"  {'truth':<15} {'noise':>5}  {'strict hit':>10}  ranked first by AICc | by plain AIC")
+    k1_rows = []
     for mech in MECHS:
         for noise in (0.02, 0.05, 0.10):
-            aicc, aic = Counter(), Counter()
+            aicc, aic, aicc_k1, moved = Counter(), Counter(), Counter(), 0
             for seed in range(100):
                 S, I, v, _ = simulate.inhibition_grid(mechanism=mech, noise=noise, seed=seed)
                 res = fitting.compare_models(S, I, v)
                 aicc[res[0].model] += 1
                 aic[min(res, key=aic_plain).model] += 1
+                alt = min(res, key=aicc_with_variance).model
+                aicc_k1[alt] += 1
+                moved += alt != res[0].model
+            k1_rows.append((mech, noise, aicc_k1, moved))
             fmt = lambda c: ", ".join(f"{k} {c[k]}" for k in MECHS if c[k])  # noqa: E731
             out(f"  {mech:<15} {noise:>5.0%}  {aicc[mech]:>9}%  {fmt(aicc)} | {fmt(aic)}")
     out("  strict hit = the true model itself ranked first (validate_fits.py also")
     out("  counts mixed as correct when the truth is noncompetitive)")
+
+    out()
+    out("--- (c) AICc parameter count: rate parameters only (k) or k + 1 ---")
+    out("fitting._aicc uses k = number of rate parameters (3 or 4); the residual")
+    out("variance is not counted. Same 1200 experiments as (b), ranked again with k + 1:")
+    # Row layout differs from (b) on purpose: tests/test_readme_headline_guards.py
+    # reads the (b) rows by their "noise%  hit%  picks |" shape.
+    out(f"  {'truth':<15} {'noise':>5}  k + 1: strict hit; ranked first; winner changed vs k")
+    for mech, noise, c, moved in k1_rows:
+        fmt = lambda c: ", ".join(f"{k} {c[k]}" for k in MECHS if c[k])  # noqa: E731
+        out(f"  {mech:<15} {noise:>5.0%}  k + 1: {c[mech]} of 100; {fmt(c)}; changed {moved} of 100")
+    n_moved = sum(r[3] for r in k1_rows)
+    out(f"  winner changed in {n_moved} of 1200 experiments")
 
     out()
     out("competitive truth, 5% noise, 100 experiments, 7 x 4 grid from Km/8 up to:")

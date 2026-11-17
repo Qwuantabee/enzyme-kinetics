@@ -65,7 +65,13 @@ class FitResult:
 def _aicc(n, k, rss):
     """Small sample corrected AIC. Kinetics datasets are small, so the
     correction matters -- plain AIC under-penalises the 4 parameter mixed
-    model on a 20 point dataset."""
+    model on the 28 point (7 x 4) inhibition grid of validate_fits.py.
+
+    k is the number of fitted rate parameters; the residual variance is not
+    counted. Counting it (k + 1) is the other common convention: it adds the
+    same 2 to every model's AIC term but changes the small-sample term, so the
+    3-vs-4-parameter gap at n = 28 is 2.99 instead of 2.74. Its effect on the
+    mechanism study is measured in scripts/sim_checks.py, section (c)."""
     aic = n * np.log(rss / n) + 2 * k
     denom = n - k - 1
     if denom <= 0:
