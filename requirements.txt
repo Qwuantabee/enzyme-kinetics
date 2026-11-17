@@ -1,0 +1,11 @@
+# Exact versions the full suite (281 tests + the new ones) passed with on
+# Python 3.12.3, Linux, 2026-11-17. pyproject.toml keeps lower bounds for
+# installing the library; this file pins the environment the committed
+# artefacts and figures were checked in. Install: pip install -r requirements.txt
+# then pip install -e . --no-deps
+numpy==2.5.5
+scipy==1.18.1
+matplotlib==3.11.2
+rdkit==2026.9.2
+pillow==13.0.0
+pytest==9.2.0

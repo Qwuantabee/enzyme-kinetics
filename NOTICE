@@ -1,0 +1,38 @@
+Third-party data in this repository
+===================================
+
+The code in this repository is under the MIT licence (LICENSE). The data files
+below are not the author's work and keep their own terms.
+
+data/chembl_dhfr/ecoli_dhfr_ic50.csv
+data/chembl_dhfr/ecoli_dhfr_ki.csv
+data/chembl_dhfr/ecoli_dhfr_smiles.csv
+    Records from ChEMBL (EMBL-EBI), target CHEMBL1809 (Escherichia coli
+    dihydrofolate reductase), fetched on 2026-11-13 through the ChEMBL web
+    services by scripts/fetch_chembl_dhfr.py and scripts/fetch_chembl_smiles.py.
+    The ChEMBL release current at fetch time was not recorded.
+    Licence: Creative Commons Attribution-ShareAlike 3.0 Unported
+    (https://creativecommons.org/licenses/by-sa/3.0/), as stated at
+    https://www.ebi.ac.uk/chembl/ and
+    https://chembl.gitbook.io/chembl-interface-documentation/about
+    (checked 2026-11-17). Selected columns are kept and the rows are filtered;
+    these three files, and anything derived from them alone, are shared under
+    the same licence.
+    Cite: Zdrazil B. et al. (2024) The ChEMBL Database in 2023. Nucleic Acids
+    Res 52:D1180-D1192, doi:10.1093/nar/gkad1004.
+
+data/frere2023_nitrocefin/*.csv
+    Progress curves of P99 beta-lactamase hydrolysing nitrocefin, extracted by
+    scripts/prepare_frere2023.py from the archive of Frere, Verlaine & Matagne
+    (2023), Sci Rep 13:14994, doi:10.1038/s41598-023-41805-y, Zenodo
+    doi:10.5281/zenodo.10059024.
+    Licence: Creative Commons Attribution 4.0 International
+    (https://creativecommons.org/licenses/by/4.0/), per the Zenodo record
+    https://zenodo.org/records/10059024 (checked 2026-11-17). Only the
+    experimental CSVs are extracted; the instrument header is stripped and the
+    time field's number format is converted, the readings are not altered.
+
+data/pdb/*.pdb
+    Coordinate files from the Protein Data Bank (wwPDB).
+    Licence: CC0 1.0 Universal, per https://www.wwpdb.org/about/usage-policies
+    (checked 2026-11-17).
