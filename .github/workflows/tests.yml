@@ -41,8 +41,7 @@ jobs:
         #
         # Pixel comparison, not `git diff`: matplotlib stamps its own version
         # into a tEXt chunk, so a runner with a different matplotlib produces a
-        # byte-different PNG with identical pixels. The first CI run failed on
-        # all three repos for exactly that reason (`Bin 142376 -> 142376 bytes`).
+        # byte-different PNG with identical pixels (`Bin 142376 -> 142376 bytes`).
         run: |
           python scripts/make_figures.py
           python scripts/check_figures.py --dir figures

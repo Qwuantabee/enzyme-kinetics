@@ -45,5 +45,3 @@ At that concentration the reaction is far from saturated, so the
 initial-rate window covers a large fraction of S0 and depletes it.
 That is exactly the regime where the paper argues progress curves
 are better, and the Km standard errors above are the test of it.
-
-figure -> ~/Documents/biotech-portfolio/enzyme-kinetics/figures/published_p99.png

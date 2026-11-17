@@ -49,5 +49,3 @@ Every Ki above is therefore illustrative of the arithmetic, not a
 measurement. To validate the conversion against measured Ki you need
 a paper reporting both for the same compound under stated conditions.
 That is the open item in README.md.
-
-figure -> ~/Documents/biotech-portfolio/enzyme-kinetics/figures/ic50_conversion.png
