@@ -580,6 +580,12 @@ def km_recovery_errors(noise_type):
     return {k: np.array(v) for k, v in errs.items()}
 
 
+def _robust_sd(x):
+    """IQR / 1.349, the same definition as scripts/sim_checks.py."""
+    q1, q3 = np.percentile(x, [25, 75])
+    return (q3 - q1) / 1.349
+
+
 def _pct_label(v, _pos=None):
     if v == 0:
         return "0"
@@ -614,8 +620,10 @@ def fig_km_recovery():
                        medianprops=dict(color="C3", linewidth=2.0))
             sd = e.std()
             sd_txt = f"{sd:.0f}%" if sd >= 1000 else f"{sd:.1f}%"
-            bias_txt = f"{e.mean():+.1f}%".replace("-", MINUS)
-            labels.append(f"{label}\nSD {sd_txt}\nbias {bias_txt}")
+            # Lead with the tail-insensitive spread (IQR / 1.349): it is stable
+            # across seed blocks; the sample SD is printed second because for
+            # Lineweaver-Burk under absolute error it has no finite limit.
+            labels.append(f"{label}\nspread {_robust_sd(e):.0f}%\n(SD {sd_txt})")
         ax.set_xticks(range(len(METHODS)))
         ax.set_xticklabels(labels, fontsize=FS_NOTE)
         ax.set_xlim(-0.55, len(METHODS) - 0.45)
@@ -625,11 +633,25 @@ def fig_km_recovery():
         ax.yaxis.set_minor_locator(NullLocator())
     axes[0].set_ylabel("error in fitted Km (% of the true Km)\n"
                        "linear within \u00b150%, logarithmic beyond")
-    sd_lb_abs = data["absolute"]["lineweaver_burk"].std()
-    sd_lb_rel = data["relative"]["lineweaver_burk"].std()
-    fig.suptitle("Lineweaver-Burk fails only under constant absolute error "
-                 f"(Km SD {sd_lb_abs:.0f}% vs {sd_lb_rel:.1f}% under proportional error);\n"
-                 "the nonlinear fit is never the worst", fontsize=FS_SUPTITLE)
+    lb_abs = data["absolute"]["lineweaver_burk"]
+    nl_abs = data["absolute"]["nonlinear"]
+    r_lb, r_nl = _robust_sd(lb_abs), _robust_sd(nl_abs)
+    i_ext = int(np.argmax(np.abs(lb_abs)))
+    sd_wo = np.delete(lb_abs, i_ext).std()
+    sim = _text("results_sim_checks.txt")
+    blk = _grab(sim, r"LB sample SD (\d+)% to (\d+)%, LB robust SD ([\d.]+)% to ([\d.]+)%",
+                "nine-block range")
+    fig.suptitle("Under constant absolute error Lineweaver-Burk's Km spread is "
+                 f"{r_lb / r_nl:.1f}\u00d7 the nonlinear fit's ({r_lb:.0f}% vs {r_nl:.0f}%);\n"
+                 "under proportional error the four methods are comparable",
+                 fontsize=FS_SUPTITLE)
+    ax = axes[1]
+    ax.annotate(f"seed {i_ext}: {lb_abs[i_ext]:,.0f}%\n"
+                f"drop this one fit and the SD falls\n"
+                f"from {lb_abs.std():.0f}% to {sd_wo:.0f}%".replace("-", MINUS),
+                xy=(1, lb_abs[i_ext]), xytext=(1.55, -2.2e3), fontsize=FS_NOTE,
+                ha="left", va="center",
+                arrowprops=dict(arrowstyle="->", color="0.3", lw=0.8))
     handles = [
         Line2D([], [], marker="o", ls="", color="C0", alpha=0.6, ms=4,
                label=f"one simulated experiment\n(n = {N_TRIALS} per method)"),
@@ -642,7 +664,11 @@ def fig_km_recovery():
                    framealpha=0.92, edgecolor="0.8")
     _finish(fig, f"Simulation: {N_TRIALS} datasets per error model (seeds 0\u2013499), 8 substrate "
                  f"concentrations, {NOISE:.0%} noise, true Km = {TRUE_KM:g}, Vmax = {TRUE_VMAX:g}. "
-                 "Every fit is plotted; none is hidden. SD and bias are over all 500 fits.")
+                 "Every fit is plotted; none is hidden. Spread = IQR / 1.349 (equals the SD "
+                 "for a normal distribution). Lineweaver-Burk's Km is a slope over an intercept "
+                 "that crosses zero, so its sample SD has no finite limit: over nine blocks of "
+                 f"500 seeds it runs {blk[1]}% to {blk[2]}%, while its spread stays at "
+                 f"{blk[3]}\u2013{blk[4]}% (results_sim_checks.txt).")
     return fig
 
 
@@ -871,7 +897,7 @@ def fig_ic50_conversion():
 FIGURES = {
     "km_recovery.png": (
         fig_km_recovery,
-        "Lineweaver-Burk fails only under constant absolute error",
+        "under constant absolute error LB's Km spread is 3.6x the nonlinear fit's (59% vs 16%)",
         "seeded simulation (src/enzkin/simulate.py)"),
     "mm_fit.png": (
         fig_mm_fit,
