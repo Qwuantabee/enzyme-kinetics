@@ -1,5 +1,9 @@
 # enzkin — enzyme kinetics and inhibition analysis
 
+[![tests](https://github.com/Qwuantabee/enzyme-kinetics/actions/workflows/tests.yml/badge.svg)](https://github.com/Qwuantabee/enzyme-kinetics/actions/workflows/tests.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Qwuantabee/enzyme-kinetics/blob/main/LICENSE)
+[![python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](https://github.com/Qwuantabee/enzyme-kinetics/blob/main/pyproject.toml)
+
 Fitting Michaelis-Menten and inhibition models to initial-rate and progress-curve data, with honest uncertainty and mechanism assignment by AICc rather than by eye. Validated on simulated data with known truth, on one published trace set (Frère 2023) and on ChEMBL *E. coli* DHFR records. Every figure is regenerated from committed data by `python scripts/make_figures.py`.
 
 ## At a glance
